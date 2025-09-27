@@ -1,1 +1,9 @@
 # Envory-drive-gestion-agil
+# 1. Crear el entorno virtual
+python -m venv env
+
+# 2. Activar el entorno virtual (Windows)
+env\Scripts\activate
+
+# 3. Instalar los paquetes necesarios
+pip install -r requirements.txt
