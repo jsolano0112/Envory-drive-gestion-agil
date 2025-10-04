@@ -1,4 +1,4 @@
-# Envory-drive-gestion-agil
+# Evory-drive-gestion-agil
 # 1. Crear el entorno virtual
 python -m venv env
 
@@ -7,3 +7,4 @@ env\Scripts\activate
 
 # 3. Instalar los paquetes necesarios
 pip install -r requirements.txt
+npm install

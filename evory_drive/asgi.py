@@ -1,5 +1,5 @@
 """
-ASGI config for envory_drive project.
+ASGI config for evory_drive project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'envory_drive.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'evory_drive.settings')
 
 application = get_asgi_application()

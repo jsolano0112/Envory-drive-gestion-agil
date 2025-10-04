@@ -1,5 +1,5 @@
 """
-WSGI config for envory_drive project.
+WSGI config for evory_drive project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'envory_drive.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'evory_drive.settings')
 
 application = get_wsgi_application()
