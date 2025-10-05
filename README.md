@@ -10,7 +10,8 @@ pip install -r requirements.txt
 
 npm install
 
-#Path para registro de conductores: 
+# Path para registro de conductores: 
+
 ´´
 http://127.0.0.1:8000/registro-conductores/
 ´´
