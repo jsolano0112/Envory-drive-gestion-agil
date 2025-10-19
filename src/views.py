@@ -181,14 +181,14 @@ def client_registration_api(request):
         if User.objects.filter(email=email).exists():
             return JsonResponse({
                 'success': False,
-                'message': 'El usuario se encuentra registrado'
+                'message': 'El email se encuentra registrado'
             }, status=409)
         
         # Verificar por número de documento
         if Cliente.objects.filter(numero_documento=numero_documento).exists():
             return JsonResponse({
                 'success': False,
-                'message': 'El usuario se encuentra registrado'
+                'message': 'El numero de documento se encuentra registrado'
             }, status=409)
         
         # ===================================
@@ -544,12 +544,21 @@ def driver_registration_api(request):
         # VALIDACIÓN DE PLACA
         # ===================================
         placa = data['placa'].strip().upper()
-        if not re.match(r'^[A-Z]{3}[0-9]{3}$', placa):
+        if not re.match(r'^[A-Z0-9]{1,6}$', placa):
             return JsonResponse({
                 'success': False,
-                'message': 'La placa debe tener formato ABC123'
+                'message': 'La placa solo puede tener letras y números (máximo 6 caracteres)'
             }, status=400)
-        
+
+        letras = sum(c.isalpha() for c in placa)
+        numeros = sum(c.isdigit() for c in placa)
+
+        if letras < 2 and numeros < 2:
+            return JsonResponse({
+                'success': False,
+                'message': 'La placa debe tener al menos dos letras o dos números'
+            }, status=400)
+            
         # ===================================
         # VERIFICAR USUARIO NO EXISTENTE
         # ===================================

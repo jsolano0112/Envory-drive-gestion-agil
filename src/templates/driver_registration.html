@@ -271,15 +271,16 @@
                   <option value="Cartagena">Cartagena</option>
                 </select>
               </div>
-
             </div>
 
             <!-- Información Bancaria -->
             <div class="mt-8">
-              <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b-2 border-sky-500">
+              <h3
+                class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b-2 border-sky-500"
+              >
                 Información Bancaria
               </h3>
-              
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Tipo de Cuenta -->
                 <div>
@@ -338,7 +339,8 @@
                 <!-- Confirmar Número de Cuenta -->
                 <div>
                   <label class="block text-gray-700 font-semibold mb-2">
-                    Confirmar Número de Cuenta <span class="text-red-500">*</span>
+                    Confirmar Número de Cuenta
+                    <span class="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -354,13 +356,22 @@
               <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4">
                 <div class="flex">
                   <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    <svg
+                      class="h-5 w-5 text-blue-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div class="ml-3">
                     <p class="text-sm text-blue-700">
-                      Los pagos de tus servicios se depositarán en esta cuenta bancaria. Verifica que los datos sean correctos.
+                      Los pagos de tus servicios se depositarán en esta cuenta
+                      bancaria. Verifica que los datos sean correctos.
                     </p>
                   </div>
                 </div>
@@ -439,10 +450,7 @@
                         class="hidden"
                         id="documento_reverso"
                       />
-                      <label
-                        for="documento_reverso"
-                        class="cursor-pointer"
-                      >
+                      <label for="documento_reverso" class="cursor-pointer">
                         <svg
                           class="mx-auto h-12 w-12 text-sky-400"
                           fill="none"
@@ -1054,7 +1062,8 @@
                     minlength="8"
                   />
                   <p class="text-xs text-gray-500 mt-1">
-                    Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial
+                    Mínimo 8 caracteres, una mayúscula, una minúscula, un número
+                    y un carácter especial
                   </p>
                 </div>
 
@@ -1077,20 +1086,29 @@
               <div class="mt-8 bg-green-50 border-l-4 border-green-500 p-4">
                 <div class="flex">
                   <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    <svg
+                      class="h-5 w-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div class="ml-3">
                     <p class="text-sm text-green-700">
-                      <strong>Requisitos de contraseña:</strong> Mínimo 8 caracteres, debe incluir al menos una letra mayúscula, una minúscula, un número y un carácter especial.
+                      <strong>Requisitos de contraseña:</strong> Mínimo 8
+                      caracteres, debe incluir al menos una letra mayúscula, una
+                      minúscula, un número y un carácter especial.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
 
         <!-- Navigation Buttons -->
@@ -1111,11 +1129,9 @@
               type="button"
               id="cancelBtn"
               class="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-              onclick="if(confirm('¿Está seguro que desea cancelar el registro? Se perderán todos los datos ingresados.')) { window.location.href = '/accounts/login/'; }"
             >
               Cancelar
             </button>
-
             <button
               type="button"
               id="nextBtn"
@@ -1125,10 +1141,9 @@
             </button>
 
             <button
-              type="button"
+              type="submit"
               id="submitBtn"
               class="px-8 py-3 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors hidden"
-              onclick="submitDriverForm()"
             >
               Registrar Conductor
             </button>
