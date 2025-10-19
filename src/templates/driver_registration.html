@@ -67,9 +67,9 @@
           <button
             type="button"
             class="tab-button flex-1 py-4 px-6 text-center font-semibold transition-colors tab-inactive"
-            data-tab="banking"
+            data-tab="password"
           >
-            Información Bancaria
+            Crear Contraseña
           </button>
         </div>
 
@@ -271,40 +271,110 @@
                   <option value="Cartagena">Cartagena</option>
                 </select>
               </div>
+            </div>
 
-              <!-- Crear Contraseña -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Crear Contraseña <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  maxlength="60"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                  placeholder="Min. 8 caracteres"
-                  minlength="8"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                  Mínimo 8 caracteres, una mayúscula, una minúscula, un número y
-                  un carácter especial
-                </p>
+            <!-- Información Bancaria -->
+            <div class="mt-8">
+              <h3
+                class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b-2 border-sky-500"
+              >
+                Información Bancaria
+              </h3>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Tipo de Cuenta -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Tipo de Cuenta <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="tipo_cuenta"
+                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="Ahorros">Ahorros</option>
+                    <option value="Corriente">Corriente</option>
+                  </select>
+                </div>
+
+                <!-- Banco -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Banco <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="banco"
+                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="Bancolombia">Bancolombia</option>
+                    <option value="Banco de Bogotá">Banco de Bogotá</option>
+                    <option value="Davivienda">Davivienda</option>
+                    <option value="BBVA">BBVA</option>
+                    <option value="Banco Popular">Banco Popular</option>
+                    <option value="Banco Occidente">Banco Occidente</option>
+                    <option value="Banco AV Villas">Banco AV Villas</option>
+                    <option value="Nequi">Nequi</option>
+                    <option value="Daviplata">Daviplata</option>
+                  </select>
+                </div>
+
+                <!-- Número de Cuenta -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Número de Cuenta <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="numero_cuenta"
+                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder="1234567890"
+                    pattern="[0-9]+"
+                  />
+                </div>
+
+                <!-- Confirmar Número de Cuenta -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Confirmar Número de Cuenta
+                    <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="confirmar_numero_cuenta"
+                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder="1234567890"
+                    pattern="[0-9]+"
+                  />
+                </div>
               </div>
 
-              <!-- Confirmar Contraseña -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Confirmar Contraseña <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="confirm_password"
-                  required
-                  maxlength="60"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                  placeholder="Repita la contraseña"
-                />
+              <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <svg
+                      class="h-5 w-5 text-blue-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                      Los pagos de tus servicios se depositarán en esta cuenta
+                      bancaria. Verifica que los datos sean correctos.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -338,9 +408,9 @@
                         required
                         accept=".pdf,.jpg,.jpeg,.png"
                         class="hidden"
-                        id="tarjeta_propiedad"
+                        id="documento_frontal"
                       />
-                      <label for="tarjeta_propiedad" class="cursor-pointer">
+                      <label for="documento_frontal" class="cursor-pointer">
                         <svg
                           class="mx-auto h-12 w-12 text-sky-400"
                           fill="none"
@@ -378,12 +448,9 @@
                         name="documento_reverso"
                         accept=".pdf,.jpg,.jpeg,.png"
                         class="hidden"
-                        id="certificado_reconocimiento"
+                        id="documento_reverso"
                       />
-                      <label
-                        for="certificado_reconocimiento"
-                        class="cursor-pointer"
-                      >
+                      <label for="documento_reverso" class="cursor-pointer">
                         <svg
                           class="mx-auto h-12 w-12 text-sky-400"
                           fill="none"
@@ -765,7 +832,8 @@
                     name="color"
                     required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                    placeholder="Rojo" maxlength="20"
+                    placeholder="Rojo"
+                    maxlength="20"
                   />
                 </div>
 
@@ -969,109 +1037,74 @@
             </div>
           </div>
 
-          <!-- Tab 4: Información Bancaria -->
-          <div id="tab-banking" class="tab-content hidden">
+          <!-- Tab 4: Crear Contraseña -->
+          <div id="tab-password" class="tab-content hidden">
             <h2
               class="text-2xl font-bold text-gray-800 mb-6 pb-2 border-b-2 border-sky-500"
             >
-              Información Bancaria
+              Crear Contraseña
             </h2>
 
-            <div
-              class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
-            >
-              <!-- Tipo de Cuenta -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Tipo de Cuenta <span class="text-red-500">*</span>
-                </label>
-                <select
-                  name="tipo_cuenta"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="Ahorros">Ahorros</option>
-                  <option value="Corriente">Corriente</option>
-                </select>
-              </div>
-
-              <!-- Banco -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Banco <span class="text-red-500">*</span>
-                </label>
-                <select
-                  name="banco"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="Bancolombia">Bancolombia</option>
-                  <option value="Banco de Bogotá">Banco de Bogotá</option>
-                  <option value="Davivienda">Davivienda</option>
-                  <option value="BBVA">BBVA</option>
-                  <option value="Banco Popular">Banco Popular</option>
-                  <option value="Banco Occidente">Banco Occidente</option>
-                  <option value="Banco AV Villas">Banco AV Villas</option>
-                  <option value="Nequi">Nequi</option>
-                  <option value="Daviplata">Daviplata</option>
-                </select>
-              </div>
-
-              <!-- Número de Cuenta -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Número de Cuenta <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="numero_cuenta"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                  placeholder="1234567890"
-                  pattern="[0-9]+"
-                />
-              </div>
-
-              <!-- Confirmar Número de Cuenta -->
-              <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                  Confirmar Número de Cuenta <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="confirmar_numero_cuenta"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                  placeholder="1234567890"
-                  pattern="[0-9]+"
-                />
-              </div>
-            </div>
-
-            <div
-              class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 max-w-4xl mx-auto"
-            >
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg
-                    class="h-5 w-5 text-blue-500"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm text-blue-700">
-                    Los pagos de tus servicios se depositarán en esta cuenta
-                    bancaria. Verifica que los datos sean correctos.
+            <div class="max-w-2xl mx-auto">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Crear Contraseña -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Crear Contraseña <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    maxlength="60"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder="Min. 8 caracteres"
+                    minlength="8"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">
+                    Mínimo 8 caracteres, una mayúscula, una minúscula, un número
+                    y un carácter especial
                   </p>
+                </div>
+
+                <!-- Confirmar Contraseña -->
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2">
+                    Confirmar Contraseña <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="confirm_password"
+                    required
+                    maxlength="60"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder="Repita la contraseña"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-8 bg-green-50 border-l-4 border-green-500 p-4">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <svg
+                      class="h-5 w-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div class="ml-3">
+                    <p class="text-sm text-green-700">
+                      <strong>Requisitos de contraseña:</strong> Mínimo 8
+                      caracteres, debe incluir al menos una letra mayúscula, una
+                      minúscula, un número y un carácter especial.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1094,6 +1127,13 @@
           <div class="flex gap-4">
             <button
               type="button"
+              id="cancelBtn"
+              class="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
               id="nextBtn"
               class="px-6 py-3 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors"
             >
@@ -1114,6 +1154,6 @@
       <!-- Success/Error Messages -->
       <div id="messageContainer" class="mt-4"></div>
     </div>
- <script src="{% static 'js/driver_registration.js' %}"></script>
+    <script src="{% static 'js/driver_registration.js' %}"></script>
   </body>
 </html>
