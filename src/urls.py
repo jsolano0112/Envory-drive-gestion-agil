@@ -16,4 +16,11 @@ urlpatterns = [
     path('api/clientes/registro/', views.client_registration_api, name='client_registration_api'),
     path('api/clientes/', views.client_list_api, name='client_list_api'),
     path('api/companias/', views.companies_list_api, name='companies_list_api'),
+    
+    # ====================================
+    # MÓDULO: REGISTRO DE CONDUCTORES
+    # ====================================
+    # API Endpoints para conductores
+    path('api/conductores/registro/', views.driver_registration_api, name='driver_registration_api'),
+    path('api/conductores/', views.driver_list_api, name='driver_list_api'),
 ]

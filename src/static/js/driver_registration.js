@@ -1,11 +1,13 @@
 
-// Tab functionality
-const tabs = document.querySelectorAll(".tab-button");
-const tabContents = document.querySelectorAll(".tab-content");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const submitBtn = document.getElementById("submitBtn");
-let currentTab = 0;
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabs = document.querySelectorAll(".tab-button");
+    const tabContents = document.querySelectorAll(".tab-content");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    let currentTab = 0;
 
 function showTab(index) {
     tabContents.forEach((content) => content.classList.add("hidden"));
@@ -200,85 +202,306 @@ document
         // Here you would implement the actual save draft logic
     });
 
-// Form submission
-document
-    .getElementById("driverForm")
-    .addEventListener("submit", function (e) {
-        e.preventDefault();
 
-        if (validateForm()) {
-            // Here you would send the form data to Django backend
-            showMessage(
-                "El registro del conductor fue exitoso. Estado: Pendiente de Verificación",
-                "success"
-            );
+    // Form submission
+    const driverForm = document.getElementById("driverForm");
+    if (driverForm) {
+        driverForm.addEventListener("submit", function (e) {
+            e.preventDefault();
 
-            // Simulate form submission
-            setTimeout(() => {
-                this.submit();
-            }, 2000);
+            if (validateForm()) {
+                // Crear FormData para enviar archivos
+                const formData = new FormData(this);
+                
+                // Mostrar indicador de carga
+                const submitBtn = document.getElementById("submitBtn");
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = "Registrando...";
+                submitBtn.disabled = true;
+
+                // Enviar datos al backend
+                fetch('/api/conductores/registro/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage(data.message, "success");
+                        
+                        // Redirigir al login después del éxito
+                        setTimeout(() => {
+                            window.location.href = '/accounts/login/';
+                        }, 3000);
+                    } else {
+                        showMessage(data.message, "error");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage("Error al procesar el registro. Intente nuevamente.", "error");
+                })
+                .finally(() => {
+                    // Restaurar botón
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                });
+            }
+        });
+    }
+
+    function validateForm() {
+        // Validate all required fields across all tabs
+        const allInputs = document.querySelectorAll("[required]");
+        let isValid = true;
+        let missingFields = [];
+
+        allInputs.forEach((input) => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.classList.add("border-red-500");
+                
+                // Get field label for better error message
+                const label = input.previousElementSibling;
+                if (label && label.tagName === 'LABEL') {
+                    const fieldName = label.textContent.replace('*', '').trim();
+                    missingFields.push(fieldName);
+                }
+            } else {
+                input.classList.remove("border-red-500");
+            }
+        });
+
+        // Validate required files
+        const requiredFiles = document.querySelectorAll('input[type="file"][required]');
+        requiredFiles.forEach((fileInput) => {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                isValid = false;
+                fileInput.classList.add("border-red-500");
+                
+                // Get file field label
+                const label = fileInput.closest('div').querySelector('label');
+                if (label) {
+                    const fieldName = label.textContent.replace('*', '').trim();
+                    missingFields.push(fieldName);
+                }
+            } else {
+                fileInput.classList.remove("border-red-500");
+            }
+        });
+
+        if (!isValid) {
+            let errorMessage = "Error: faltan campos obligatorios:\n";
+            errorMessage += missingFields.join(", ");
+            showMessage(errorMessage, "error");
+            
+            // Go to first tab with errors
+            goToFirstTabWithErrors();
+            return false;
         }
-    });
 
-function validateForm() {
-    // Validate all required fields
-    const allInputs = document.querySelectorAll("[required]");
-    let isValid = true;
-
-    allInputs.forEach((input) => {
-        if (!input.value.trim()) {
-            isValid = false;
-            input.classList.add("border-red-500");
+        // Validate passwords match
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            showMessage("Las contraseñas no coinciden", "error");
+            return false;
         }
-    });
 
-    if (!isValid) {
-        showMessage("Error: faltan campos obligatorios", "error");
-        return false;
+        // Validate bank account numbers match
+        if (numeroCuenta.value !== confirmarCuenta.value) {
+            showMessage("Los números de cuenta no coinciden", "error");
+            return false;
+        }
+
+        // Validate age (minimum 21 years)
+        const fechaNacimiento = document.querySelector('[name="fecha_nacimiento"]');
+        if (fechaNacimiento && fechaNacimiento.value) {
+            const birthDate = new Date(fechaNacimiento.value);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            if (age < 21) {
+                showMessage("El conductor debe ser mayor de 21 años", "error");
+                return false;
+            }
+        }
+
+        // Validate license dates
+        const licenciaExpedicion = document.querySelector('[name="licencia_expedicion"]');
+        const licenciaVencimiento = document.querySelector('[name="licencia_vencimiento"]');
+        
+        if (licenciaExpedicion && licenciaVencimiento && 
+            licenciaExpedicion.value && licenciaVencimiento.value) {
+            
+            const expedicion = new Date(licenciaExpedicion.value);
+            const vencimiento = new Date(licenciaVencimiento.value);
+            const today = new Date();
+
+            if (vencimiento <= expedicion) {
+                showMessage("La fecha de vencimiento debe ser posterior a la fecha de expedición", "error");
+                return false;
+            }
+
+            if (vencimiento <= today) {
+                showMessage("La licencia de conducción está vencida", "error");
+                return false;
+            }
+        }
+
+        // Validate vehicle year
+        const anioVehiculo = document.querySelector('[name="anio"]');
+        if (anioVehiculo && anioVehiculo.value) {
+            const anio = parseInt(anioVehiculo.value);
+            const currentYear = new Date().getFullYear();
+            
+            if (anio < 2015 || anio > currentYear) {
+                showMessage("El año del vehículo debe estar entre 2015 y el año actual", "error");
+                return false;
+            }
+        }
+
+        // Validate plate format
+        const placa = document.querySelector('[name="placa"]');
+        if (placa && placa.value) {
+            const platePattern = /^[A-Z]{3}[0-9]{3}$/;
+            if (!platePattern.test(placa.value.toUpperCase())) {
+                showMessage("La placa debe tener formato ABC123", "error");
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    // Validate passwords match
-    if (passwordInput.value !== confirmPasswordInput.value) {
-        showMessage("Las contraseñas no coinciden", "error");
-        return false;
+    function goToFirstTabWithErrors() {
+        // Find the first tab that has required fields with errors
+        const tabContents = document.querySelectorAll(".tab-content");
+        
+        for (let i = 0; i < tabContents.length; i++) {
+            const tabContent = tabContents[i];
+            const requiredInputs = tabContent.querySelectorAll("[required]");
+            const requiredFiles = tabContent.querySelectorAll('input[type="file"][required]');
+            
+            let hasErrors = false;
+            
+            // Check required inputs
+            requiredInputs.forEach((input) => {
+                if (!input.value.trim()) {
+                    hasErrors = true;
+                }
+            });
+            
+            // Check required files
+            requiredFiles.forEach((fileInput) => {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    hasErrors = true;
+                }
+            });
+            
+            if (hasErrors) {
+                // Switch to this tab
+                currentTab = i;
+                showTab(i);
+                break;
+            }
+        }
     }
 
-    // Validate bank account numbers match
-    if (numeroCuenta.value !== confirmarCuenta.value) {
-        showMessage("Los números de cuenta no coinciden", "error");
-        return false;
+    function showMessage(message, type) {
+        const messageContainer = document.getElementById("messageContainer");
+        const bgColor =
+            type === "success"
+                ? "bg-green-100 border-green-500 text-green-700"
+                : "bg-red-100 border-red-500 text-red-700";
+
+        // Convert line breaks to HTML
+        const formattedMessage = message.replace(/\n/g, '<br>');
+
+        messageContainer.innerHTML = `
+                    <div class="${bgColor} border-l-4 p-4 rounded shadow-lg" role="alert">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                ${type === "success"
+                ? '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
+                : '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'
+            }
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-semibold">${formattedMessage}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+        // Scroll to message container
+        messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+            messageContainer.innerHTML = "";
+        }, 8000); // Increased timeout for error messages
     }
 
-    return true;
-}
+    // Cancel button functionality - moved to end to ensure DOM is ready
+    const cancelBtn = document.getElementById("cancelBtn");
+    console.log("Cancel button found:", cancelBtn); // Debug log
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            console.log("Cancel button clicked!"); // Debug log
+            
+            if (confirm("¿Está seguro que desea cancelar el registro? Se perderán todos los datos ingresados.")) {
+                console.log("User confirmed cancellation"); // Debug log
+                window.location.href = '/accounts/login/';
+            }
+        });
+    } else {
+        console.error("Cancel button not found!");
+    }
 
-function showMessage(message, type) {
-    const messageContainer = document.getElementById("messageContainer");
-    const bgColor =
-        type === "success"
-            ? "bg-green-100 border-green-500 text-green-700"
-            : "bg-red-100 border-red-500 text-red-700";
+    // Initialize
+    showTab(0);
+}); // End of DOMContentLoaded
 
-    messageContainer.innerHTML = `
-                <div class="${bgColor} border-l-4 p-4 rounded shadow-lg" role="alert">
+function submitDriverForm() {
+    
+    const form = document.getElementById("driverForm");
+    console.log()
+    if (!form) {
+        console.error("Form not found!");
+        return;
+    }
+    
+    const currentTabElement = document.querySelector('.tab-content:not(.hidden)');
+    const isLastTab = currentTabElement && currentTabElement.id === 'tab-password';
+    
+        if (isLastTab) {
+        const messageContainer = document.getElementById("messageContainer");
+        if (messageContainer) {
+            messageContainer.innerHTML = `
+                <div class="bg-red-100 border-red-500 text-red-700 border-l-4 p-4 rounded shadow-lg" role="alert">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            ${type === "success"
-            ? '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
-            : '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'
-        }
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
                         </div>
                         <div class="ml-3">
-                            <p class="font-semibold">${message}</p>
+                            <p class="font-semibold">Debe completar todos los campos obligatorios de todas las pestañas antes de registrar</p>
                         </div>
                     </div>
                 </div>
             `;
-
-    setTimeout(() => {
-        messageContainer.innerHTML = "";
-    }, 5000);
+        }
+        return;
+    }
+    
+    form.dispatchEvent(new Event('submit'));
 }
-
-// Initialize
-showTab(0);
