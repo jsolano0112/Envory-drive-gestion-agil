@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 
 def crear_companias():
     """Crea compañías de prueba"""
-    print("\n🏢 Creando compañías de prueba...")
+    print("\nCreando compañías de prueba...")
     
     companias_data = [
         {"nombre": "Transportes Unidos S.A.", "nit": "900123456-7"},
@@ -33,26 +33,31 @@ def crear_companias():
         )
         if created:
             companias_creadas.append(compania)
-            print(f"  ✅ Creada: {compania.nombre}")
+            print(f"  [OK] Creada: {compania.nombre}")
         else:
-            print(f"  ⏭️  Ya existe: {compania.nombre}")
+            if not compania.estado:
+                compania.estado = True
+                compania.save(update_fields=["estado"])
+                print(f"  [FIX] Activada: {compania.nombre}")
+            else:
+                print(f"  [SKIP] Ya existe: {compania.nombre}")
     
     return companias_creadas
 
 
 def crear_cliente_prueba():
     """Crea un cliente de prueba"""
-    print("\n👤 Creando cliente de prueba...")
+    print("\nCreando cliente de prueba...")
     
     # Verificar si el usuario ya existe
     if User.objects.filter(email="prueba@evory.com").exists():
-        print("  ⏭️  El cliente de prueba ya existe")
+        print("  [SKIP] El cliente de prueba ya existe")
         return
     
     # Verificar que haya compañías
     companias = Compania.objects.filter(estado=True)
     if not companias.exists():
-        print("  ❌ No hay compañías activas. Crea compañías primero.")
+        print("  [ERROR] No hay compañías activas. Crea compañías primero.")
         return
     
     compania = companias.first()
@@ -77,16 +82,16 @@ def crear_cliente_prueba():
         compania=compania
     )
     
-    print(f"  ✅ Cliente creado: {cliente.get_nombre_completo()}")
-    print(f"     📧 Email: prueba@evory.com")
-    print(f"     🔑 Contraseña: Prueba123")
-    print(f"     🏢 Compañía: {compania.nombre}")
+    print(f"  [OK] Cliente creado: {cliente.get_nombre_completo()}")
+    print("     Email: prueba@evory.com")
+    print("     Password: Prueba123")
+    print(f"     Compañía: {compania.nombre}")
 
 
 def main():
     """Función principal"""
     print("=" * 60)
-    print("🚀 CREANDO DATOS DE PRUEBA - EVORY DRIVE")
+    print("CREANDO DATOS DE PRUEBA - EVORY DRIVE")
     print("=" * 60)
     
     try:
@@ -97,18 +102,18 @@ def main():
         crear_cliente_prueba()
         
         print("\n" + "=" * 60)
-        print("✅ DATOS DE PRUEBA CREADOS EXITOSAMENTE")
+        print("DATOS DE PRUEBA CREADOS EXITOSAMENTE")
         print("=" * 60)
-        print("\n📋 RESUMEN:")
+        print("\nRESUMEN:")
         print(f"   Compañías activas: {Compania.objects.filter(estado=True).count()}")
         print(f"   Clientes registrados: {Cliente.objects.count()}")
-        print("\n💡 SIGUIENTE PASO:")
+        print("\nSiguiente paso:")
         print("   Accede a: http://127.0.0.1:8000/registro-cliente/")
         print("   O prueba login con: prueba@evory.com / Prueba123")
         print()
         
     except Exception as e:
-        print(f"\n❌ ERROR: {str(e)}")
+        print(f"\nERROR: {str(e)}")
         import traceback
         traceback.print_exc()
 
