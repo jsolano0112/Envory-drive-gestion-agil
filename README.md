@@ -31,3 +31,9 @@ python manage.py runserver
 # 10. Acceder a la ruta para registro de conductores:
 # URL del endpoint local
 http://127.0.0.1:8000/registro-conductores/
+
+#11 Formulario de Registro de Clientes
+http://127.0.0.1:8000/registro-cliente/
+
+ Panel de Administración Django
+http://127.0.0.1:8000/admin/
