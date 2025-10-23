@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>EVORY DRIVE - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+    <!-- Sidebar de navegación -->
+    <aside class="w-20 bg-white shadow-lg flex flex-col items-center py-6 space-y-6">
+        <!-- Logo -->
+        <svg class="w-10 h-10 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+        </svg>
+
+        <!-- Navegación -->
+        <nav class="flex flex-col space-y-4">
+            <a href="#" class="text-gray-500 hover:text-sky-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"></path></svg>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-sky-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <div class="flex-1 p-8">
+        <!-- Encabezado -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Hola, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+                <p class="text-gray-600 mt-1">Bienvenido a EVORY DRIVE</p>
+            </div>
+            <button id="toggleSidebar" class="relative">
+                <svg class="w-10 h-10 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M5.121 17.804A4 4 0 0112 14a4 4 0 016.879 3.804M12 14v1m0 4h.01"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Mensaje de bienvenida -->
+        <section class="mb-8">
+            <p class="text-lg text-gray-700">Tu sesión está activa. Puedes acceder a tus módulos desde el menú lateral o revisar tu perfil.</p>
+        </section>
+    </div>
+
+    <!-- Barra lateral de perfil -->
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-72 bg-sky-600 text-white shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6 border-b border-sky-500">
+            <h3 class="text-xl font-bold">Tu Perfil</h3>
+        </div>
+        <div class="p-6 space-y-3 text-sm">
+            <p><strong>Nombre completo:</strong> {{ request.user.first_name }} {{ request.user.last_name }}</p>
+            <p><strong>Usuario:</strong> {{ request.user.username }}</p>
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+            <p><strong>Fecha de ingreso:</strong> {{ request.user.date_joined|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="px-6 mt-6">
+            <a href="{% url 'logout' %}" class="block w-full text-center bg-white text-sky-600 font-semibold py-2 rounded hover:bg-gray-100 transition">
+                Salir
+            </a>
+        </div>
+    </aside>
+
+    <!-- Script para mostrar/ocultar el menú y cerrarlo al hacer clic fuera -->
+    <script>
+        const toggleBtn = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('translate-x-full');
+        });
+
+        document.addEventListener('click', (event) => {
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            const isClickOnToggle = toggleBtn.contains(event.target);
+
+            if (!isClickInsideSidebar && !isClickOnToggle) {
+                sidebar.classList.add('translate-x-full');
+            }
+        });
+    </script>
+</body>
+</html>

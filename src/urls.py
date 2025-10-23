@@ -1,11 +1,13 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     # Rutas existentes
     path('', views.inicio, name='inicio'),
     path('registro-conductores/', views.driver_registration, name='driver_registration'),
-    
+    path('home/', views.home_view, name='home'),
+    path('logout/', views.logout_view, name='logout'),
     # ====================================
     # MÓDULO: REGISTRO DE CLIENTES
     # ====================================

@@ -9,6 +9,10 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import json
 import re
+from django.contrib.auth import authenticate, login
+from django.contrib.auth import logout
+
+
 
 from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor
 
@@ -16,17 +20,35 @@ from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor
 # VISTAS EXISTENTES
 # ====================================
 @login_required
+def home_view(request):
+    return render(request, 'home.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('inicio') 
+
 def index(request):
     return render(request, 'index.html')
 
+
 def inicio(request):
-    return HttpResponse("¡Hola! Esta es la primera página web con Django.")
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('home')  # redirige a la vista protegida
+        else:
+            messages.error(request, 'Credenciales inválidas. Intenta nuevamente.')
+            return render(request, 'login.html')
+    
+    return render(request, 'login.html')
 
 def driver_registration(request):
     return render(request, 'driver_registration.html')
 
-def login(request):
-    return render(request, 'login.html')
 
 
 # ====================================
