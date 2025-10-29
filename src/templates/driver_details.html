@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Historial de Conductor{% endblock %}
+
+{% block page_title %}Detalle de Conductor{% endblock %}
+
+{% block page_subtitle %}Gestión detallada de conductores{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto">
+        <!-- Header con búsqueda -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">            
+            <form method="GET" action="{% url 'driver_history' %}" class="flex gap-3">
+                <div class="flex-1 relative">
+                    <svg class="absolute left-3 top-3 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Buscar conductor por nombre, documento o placa"
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value="{{ search_term }}"
+                    />
+                </div>
+                <button 
+                    type="submit"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                    Buscar
+                </button>
+            </form>
+        </div>
+
+        {% if driver %}
+        <!-- Información del Conductor -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">
+                        {{ driver.user.first_name }} {{ driver.user.last_name }}
+                    </h2>
+                    <p class="text-gray-600 mt-1">Conductor desde {{ driver.fecha_registro|date:"d M Y" }}</p>
+                </div>
+                <div class="flex gap-2">
+                    <form method="POST" action="{% url 'update_driver_status' driver.id %}">
+                        {% csrf_token %}
+                        <select 
+                            name="status" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onchange="this.form.submit()"
+                        >
+                            <option value="Activo" {% if driver.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                            <option value="Inactivo" {% if driver.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                            <option value="Suspendido" {% if driver.estado == 'Suspendido' %}selected{% endif %}>Suspendido</option>
+                            <option value="Bloqueado" {% if driver.estado == 'Bloqueado' %}selected{% endif %}>Bloqueado</option>
+                            <option value="En Revisión" {% if driver.estado == 'En Revisión' %}selected{% endif %}>En Revisión</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
+                    <div class="text-3xl font-bold">{{ stats.total_trips }}</div>
+                    <div class="text-sm opacity-90 mt-1">Viajes Realizados</div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
+                    <div class="text-3xl font-bold">{{ stats.avg_rating|floatformat:1 }}</div>
+                    <div class="text-sm opacity-90 mt-1">Calificación Promedio</div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
+                    <div class="text-3xl font-bold">{{ stats.completion_rate }}%</div>
+                    <div class="text-sm opacity-90 mt-1">Viajes Completados</div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
+                    <div class="text-3xl font-bold">{{ stats.total_reports }}</div>
+                    <div class="text-sm opacity-90 mt-1">Reportes Recibidos</div>
+                </div>
+            </div>
+
+            <!-- Detalles del perfil -->
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-3">Información Personal</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Cédula:</span>
+                            <span class="font-medium">{{ driver.numero_documento }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Correo:</span>
+                            <span class="font-medium">{{ driver.user.email }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Teléfono:</span>
+                            <span class="font-medium">{{ driver.telefono }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-3">Información del Vehículo</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Placa:</span>
+                            <span class="font-medium">{{ driver.vehiculo.placa|default:'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Estado:</span>
+                            <span class="font-medium text-green-600">{{ driver.estado }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros de fecha -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <form method="GET" class="flex items-center gap-4">
+                <svg class="text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span class="text-sm font-medium text-gray-700">Filtrar por fecha:</span>
+                <input
+                    type="date"
+                    name="date_start"
+                    value="{{ date_start }}"
+                    class="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <span class="text-gray-500">hasta</span>
+                <input
+                    type="date"
+                    name="date_end"
+                    value="{{ date_end }}"
+                    class="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <input type="hidden" name="search" value="{{ search_term }}">
+                <input type="hidden" name="tab" value="{{ active_tab }}">
+                <button type="submit" class="px-4 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                    Filtrar
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <div class="flex">
+                    <a href="?search={{ search_term }}&tab=viajes" 
+                       class="px-6 py-3 font-medium transition-colors {% if active_tab == 'viajes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
+                        Todos los Viajes
+                    </a>
+                    <a href="?search={{ search_term }}&tab=estados" 
+                       class="px-6 py-3 font-medium transition-colors {% if active_tab == 'estados' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
+                        Cambios de Estado
+                    </a>
+                    <a href="?search={{ search_term }}&tab=reportes" 
+                       class="px-6 py-3 font-medium transition-colors {% if active_tab == 'reportes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
+                        Generador de Reportes
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Tab de Viajes -->
+                {% if active_tab == 'viajes' %}
+                <div class="space-y-4">
+                    {% for trip in trips %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full {% if trip.status == 'Completado' %}bg-green-500{% else %}bg-red-500{% endif %}"></div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span class="text-sm text-gray-600">{{ trip.date|date:"d M Y - H:i" }}</span>
+                                    </div>
+                                    <span class="text-sm font-medium {% if trip.status == 'Completado' %}text-green-600{% else %}text-red-600{% endif %}">
+                                        Viaje {{ trip.status }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if trip.rating %}
+                            <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
+                                <svg class="w-4 h-4 text-yellow-500 fill-yellow-500" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                                </svg>
+                                <span class="font-medium text-sm">{{ trip.rating }}.0</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="space-y-2 ml-5">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <div>
+                                    <div class="text-xs text-gray-500">Origen</div>
+                                    <div class="text-sm font-medium">{{ trip.origin }}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <div>
+                                    <div class="text-xs text-gray-500">Destino</div>
+                                    <div class="text-sm font-medium">{{ trip.destination }}</div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                <div class="text-sm text-gray-600">
+                                    Cliente: <span class="font-medium">{{ trip.client }}</span>
+                                </div>
+                                <div class="text-lg font-bold text-blue-600">${{ trip.amount|floatformat:0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-gray-500 py-8">No hay viajes registrados</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Tab de Cambios de Estado -->
+                {% if active_tab == 'estados' %}
+                <div class="space-y-4">
+                    {% for change in status_history %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="text-sm text-gray-600">{{ change.date|date:"d M Y - H:i" }}</div>
+                                        <div class="font-medium text-gray-800 mt-1">
+                                            {{ change.title }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 rounded p-3 mt-2">
+                                    <div class="text-sm space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-gray-600">Estado anterior:</span>
+                                            <span class="font-medium text-red-600">{{ change.previous_status }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-gray-600">Estado nuevo:</span>
+                                            <span class="font-medium text-green-600">{{ change.new_status }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                                            <span class="text-gray-600">Motivo:</span>
+                                            <span class="font-medium">{{ change.reason }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-gray-600">Modificado por:</span>
+                                            <span class="font-medium">{{ change.modified_by }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-gray-500 py-8">No hay cambios de estado registrados</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Tab de Generador de Reportes -->
+                {% if active_tab == 'reportes' %}
+                <div class="max-w-2xl">
+                    <div class="flex items-center gap-2 mb-6">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-800">Generar Reporte</h3>
+                    </div>
+
+                    <form method="POST" action="{% url 'generate_report' driver.id %}" class="space-y-6">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Reporte
+                            </label>
+                            <select
+                                name="report_type"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Seleccione un tipo de reporte</option>
+                                <option value="monthly">Reporte de viajes por mes</option>
+                                <option value="daily">Reporte de viajes por día</option>
+                                <option value="monetary">Reporte monetario</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Rango de Fechas
+                            </label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Fecha Inicio</label>
+                                    <input
+                                        type="date"
+                                        name="start_date"
+                                        required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Fecha Fin</label>
+                                    <input
+                                        type="date"
+                                        name="end_date"
+                                        required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                            Generar Reporte
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+       
+        {% endif %}
+    </div>
+{% endblock %}
