@@ -12,9 +12,29 @@ import re
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 
-
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
 
 from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            messages.success(request, "¡Bienvenido a EVORY DRIVE!")
+            return redirect('home')
+        else:
+            messages.error(request, "Usuario o contraseña incorrectos.")
+            return redirect('login')
+
+    return render(request, 'login.html')
+
 
 # ====================================
 # VISTAS EXISTENTES

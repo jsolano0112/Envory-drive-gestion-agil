@@ -8,20 +8,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-sky-200 via-sky-100 to-blue-200 min-h-screen flex items-center justify-center">
+
     <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        <!-- Encabezado -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">EVORY DRIVE</h1>
             <p class="text-gray-600 mt-2">Iniciar Sesión</p>
         </div>
 
+        <!-- Mensajes de error o éxito -->
         {% if messages %}
             {% for message in messages %}
-                <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 border-red-500 text-red-700{% else %}bg-green-100 border-green-500 text-green-700{% endif %} border-l-4">
+                <div class="mb-4 p-4 rounded-lg text-sm font-medium
+                    {% if message.tags == 'error' %}
+                        bg-red-100 text-red-800 border-l-4 border-red-500
+                    {% elif message.tags == 'success' %}
+                        bg-green-100 text-green-800 border-l-4 border-green-500
+                    {% else %}
+                        bg-blue-100 text-blue-800 border-l-4 border-blue-500
+                    {% endif %}
+                ">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
+        <!-- Formulario de inicio de sesión -->
         <form method="post" class="space-y-6">
             {% csrf_token %}
             <div>
@@ -60,15 +72,10 @@
             </button>
         </form>
 
+        <!-- Enlace de registro -->
         <div class="mt-6 text-center">
             <p class="text-gray-600">¿No tienes cuenta?</p>
-            <div class="mt-4 space-y-2">
-                <a 
-                    href="/registro-cliente/" 
-                    class="block bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                    Registrarse como Cliente
-                </a>
+            <div class="mt-4">
                 <a 
                     href="/registro-conductores/" 
                     class="block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
@@ -78,5 +85,6 @@
             </div>
         </div>
     </div>
+
 </body>
 </html>
