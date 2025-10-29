@@ -251,7 +251,7 @@ async function submitDriverForm(event) {
             showMessage(data.message, "success");
 
             setTimeout(() => {
-                window.location.href = '/accounts/login/';
+                window.location.href = '/';
             }, 3000);
         } else {
             showMessage(data.message || "Error al procesar el registro", "error");
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
         cancelBtn.addEventListener("click", function (e) {
             e.preventDefault();
             if (confirm("¿Está seguro que desea cancelar el registro? Se perderán todos los datos ingresados.")) {
-                window.location.href = '/accounts/login/';
+                window.location.href = '/';
             }
         });
     }

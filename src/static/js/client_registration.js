@@ -399,7 +399,7 @@ async function submitForm(event) {
             
             // Redirigir al login después de 2 segundos
             setTimeout(() => {
-                window.location.href = '/accounts/login/';
+                window.location.href = '/';
             }, 2000);
         } else {
             showMessage(result.message, 'error');
@@ -422,7 +422,7 @@ form.addEventListener('submit', submitForm);
 
 cancelBtn.addEventListener('click', function() {
     if (confirm('¿Está seguro que desea cancelar el registro? Se perderán todos los datos ingresados.')) {
-        window.location.href = '/accounts/login/';
+        window.location.href = '/';
     }
 });
 
