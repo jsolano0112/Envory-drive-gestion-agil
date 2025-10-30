@@ -8,12 +8,8 @@ from django.db.models import Q, Avg, Count
 from datetime import datetime, date
 import csv
 import io
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.pdfgen import canvas
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 from .models import Conductor, Vehiculo
 
@@ -86,7 +82,6 @@ def driver_history(request):
     return render(request, 'driver_details.html', context)
 
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def update_driver_status(request, driver_id):
@@ -131,16 +126,9 @@ def update_driver_status(request, driver_id):
         }, status=500)
 
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def generate_report(request, driver_id):
-    """
-    Genera reportes en PDF según el tipo seleccionado:
-    - monthly: Reporte de viajes por mes
-    - daily: Reporte de viajes por día
-    - monetary: Reporte monetario
-    """
     try:
         driver = get_object_or_404(Conductor, id=driver_id)
         report_type = request.POST.get('report_type')
@@ -165,122 +153,147 @@ def generate_report(request, driver_id):
                 'message': 'La fecha de inicio debe ser anterior a la fecha final'
             }, status=400)
         
-        # TODO: Cuando tengas el modelo de viajes, filtra los datos reales
-        # trips = Trip.objects.filter(
-        #     conductor=driver,
-        #     fecha__range=[start_date_obj, end_date_obj]
-        # )
+        # Crear workbook de Excel
+        wb = Workbook()
+        ws = wb.active
         
-        # Crear el PDF
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        elements = []
-        styles = getSampleStyleSheet()
+        # Estilos para el encabezado
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+        alignment_center = Alignment(horizontal="center", vertical="center")
+        border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
         
-        # Estilo personalizado para el título
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            textColor=colors.HexColor('#1E40AF'),
-            spaceAfter=30,
-            alignment=1  # Centrado
-        )
-        
-        # Título del reporte
-        report_titles = {
-            'monthly': 'Reporte de Viajes por Mes',
-            'daily': 'Reporte de Viajes por Día',
-            'monetary': 'Reporte Monetario'
-        }
-        title = Paragraph(report_titles.get(report_type, 'Reporte'), title_style)
-        elements.append(title)
+        # Información del reporte (primera fila)
+        ws['A1'] = f"Reporte {report_type.title()}"
+        ws['A1'].font = Font(bold=True, size=16)
+        ws.merge_cells('A1:K1')
         
         # Información del conductor
-        info_data = [
-            ['Conductor:', driver.get_nombre_completo()],
-            ['Documento:', driver.numero_documento],
-            ['Placa:', driver.vehiculo.placa if hasattr(driver, 'vehiculo') else 'N/A'],
-            ['Período:', f'{start_date} al {end_date}'],
+        ws['A3'] = "Información del Conductor"
+        ws['A3'].font = Font(bold=True)
+        ws.merge_cells('A3:K3')
+        
+        conductor_info = [
+            ["Nombre:", driver.get_nombre_completo()],
+            ["Documento:", driver.numero_documento],
+            ["Placa:", driver.vehiculo.placa if hasattr(driver, 'vehiculo') and driver.vehiculo else 'N/A'],
+            ["Período:", f"{start_date} al {end_date}"],
         ]
         
-        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
-        info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#E5E7EB')),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
-        ]))
-        elements.append(info_table)
-        elements.append(Spacer(1, 0.3*inch))
+        for i, (label, value) in enumerate(conductor_info, 5):
+            ws[f'A{i}'] = label
+            ws[f'A{i}'].font = Font(bold=True)
+            ws[f'B{i}'] = value
+            ws.merge_cells(f'B{i}:K{i}')
         
-        # TODO: Agregar datos reales del reporte según el tipo
-        if report_type == 'monthly':
-            # Reporte por mes
-            elements.append(Paragraph('Resumen Mensual', styles['Heading2']))
-            elements.append(Spacer(1, 0.2*inch))
+        # Espacio en blanco
+        current_row = len(conductor_info) + 6
+        
+        if report_type in ['mensual', 'diario']:
+            # Reporte de viajes
+            ws[f'A{current_row}'] = "REPORTE DE VIAJES"
+            ws[f'A{current_row}'].font = Font(bold=True, size=14)
+            ws.merge_cells(f'A{current_row}:K{current_row}')
             
-            # Datos de ejemplo (reemplazar con datos reales)
-            data = [
-                ['Mes', 'Viajes', 'Ingresos'],
-                ['Octubre 2025', '85', '$2,850,000'],
-                ['Septiembre 2025', '78', '$2,640,000'],
-                ['Agosto 2025', '84', '$2,856,000'],
+            # Encabezados
+            headers = [
+                "ID Conductor", "Nombre Conductor", "Placa Vehículo", "ID Cliente", 
+                "Nombre Cliente", "Lugar Recogida", "Destino", "Distancia (km)", 
+                "Tiempo Acumulado", "Fecha Inicio", "Fecha Fin"
             ]
             
-        elif report_type == 'daily':
-            # Reporte por día
-            elements.append(Paragraph('Resumen Diario', styles['Heading2']))
-            elements.append(Spacer(1, 0.2*inch))
+            header_row = current_row + 2
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=header_row, column=col)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = alignment_center
+                cell.border = border
+            
+            # TODO: Cuando tengas el modelo Trip, reemplaza estos datos de ejemplo
+            # trips = Trip.objects.filter(
+            #     conductor=driver,
+            #     fecha_inicio__date__range=[start_date_obj, end_date_obj]
+            # ).select_related('cliente')
             
             # Datos de ejemplo
-            data = [
-                ['Fecha', 'Viajes', 'Horas Trabajadas', 'Ingresos'],
-                ['26 Oct 2025', '12', '8.5', '$420,000'],
-                ['25 Oct 2025', '10', '7.2', '$350,000'],
-                ['24 Oct 2025', '15', '9.8', '$525,000'],
+            sample_trips = [
+                [driver.id, driver.get_nombre_completo(), driver.vehiculo.placa if hasattr(driver, 'vehiculo') and driver.vehiculo else 'N/A', 
+                 "CLI001", "Juan Pérez", "Centro", "Aeropuerto", 15.5, "02:30:00", "2025-01-15 08:00", "2025-01-15 10:30"],
+                [driver.id, driver.get_nombre_completo(), driver.vehiculo.placa if hasattr(driver, 'vehiculo') and driver.vehiculo else 'N/A',
+                 "CLI002", "María González", "Mall", "Hospital", 8.2, "01:45:00", "2025-01-16 14:00", "2025-01-16 15:45"],
+                [driver.id, driver.get_nombre_completo(), driver.vehiculo.placa if hasattr(driver, 'vehiculo') and driver.vehiculo else 'N/A',
+                 "CLI003", "Carlos Rodríguez", "Estadio", "Centro", 12.8, "02:15:00", "2025-01-17 19:00", "2025-01-17 21:15"],
             ]
             
-        elif report_type == 'monetary':
+            # Agregar datos
+            for row_idx, trip in enumerate(sample_trips, header_row + 1):
+                for col_idx, value in enumerate(trip, 1):
+                    cell = ws.cell(row=row_idx, column=col_idx)
+                    cell.value = value
+                    cell.border = border
+            
+            # Total de viajes
+            total_row = header_row + len(sample_trips) + 2
+            ws[f'A{total_row}'] = f"TOTAL VIAJES: {len(sample_trips)}"
+            ws[f'A{total_row}'].font = Font(bold=True)
+            ws.merge_cells(f'A{total_row}:K{total_row}')
+            
+        elif report_type == 'monetario':
             # Reporte monetario
-            elements.append(Paragraph('Resumen Financiero', styles['Heading2']))
-            elements.append(Spacer(1, 0.2*inch))
+            ws[f'A{current_row}'] = "REPORTE MONETARIO"
+            ws[f'A{current_row}'].font = Font(bold=True, size=14)
+            ws.merge_cells(f'A{current_row}:K{current_row}')
+            
+            # Encabezados
+            headers = ["ID Conductor", "Nombre Conductor", "Fecha Inicio", "Fecha Fin", "Valor Total Generado"]
+            
+            header_row = current_row + 2
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=header_row, column=col)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = alignment_center
+                cell.border = border
+            
+            # TODO: Cuando tengas el modelo Trip, calcula el total real
+            # total_value = Trip.objects.filter(
+            #     conductor=driver,
+            #     fecha_inicio__date__range=[start_date_obj, end_date_obj]
+            # ).aggregate(total=Sum('valor'))['total'] or 0
             
             # Datos de ejemplo
-            data = [
-                ['Concepto', 'Monto'],
-                ['Total Ingresos', '$2,850,000'],
-                ['Comisión Plataforma (20%)', '$570,000'],
-                ['Neto a Pagar', '$2,280,000'],
-                ['Viajes Realizados', '247'],
-                ['Promedio por Viaje', '$11,538'],
-            ]
+            total_value = 2850000  # $2,850,000
+            
+            data_row = header_row + 1
+            ws.cell(row=data_row, column=1).value = driver.id
+            ws.cell(row=data_row, column=2).value = driver.get_nombre_completo()
+            ws.cell(row=data_row, column=3).value = start_date
+            ws.cell(row=data_row, column=4).value = end_date
+            ws.cell(row=data_row, column=5).value = f"${total_value:,.0f}"
+            
+            # Aplicar bordes
+            for col in range(1, 6):
+                ws.cell(row=data_row, column=col).border = border
         
-        # Crear tabla con los datos
-        if data:
-            table = Table(data)
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E40AF')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
-            ]))
-            elements.append(table)
+        # Ajustar ancho de columnas
+        for col in range(1, 12):
+            ws.column_dimensions[chr(64 + col)].width = 15
         
-        # Generar el PDF
-        doc.build(elements)
+        # Crear respuesta HTTP
+        buffer = io.BytesIO()
+        wb.save(buffer)
         buffer.seek(0)
         
         # Preparar la respuesta
-        response = HttpResponse(buffer, content_type='application/pdf')
-        filename = f'reporte_{report_type}_{driver.numero_documento}_{start_date}_{end_date}.pdf'
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+        filename = f'reporte_{report_type}_{driver.numero_documento}_{start_date}_{end_date}.xlsx'
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
@@ -290,7 +303,6 @@ def generate_report(request, driver_id):
             'success': False,
             'message': f'Error al generar reporte: {str(e)}'
         }, status=500)
-
 
 
 def export_history(request, driver_id):
@@ -316,13 +328,15 @@ def export_history(request, driver_id):
         writer.writerow(['Documento', driver.numero_documento])
         writer.writerow(['Email', driver.user.email])
         writer.writerow(['Teléfono', driver.telefono_principal])
+        if driver.telefono_secundario:
+            writer.writerow(['Teléfono Secundario', driver.telefono_secundario])
         writer.writerow(['Ciudad', driver.ciudad])
         writer.writerow(['Estado', driver.estado])
         writer.writerow(['Fecha Registro', driver.fecha_registro.strftime('%Y-%m-%d')])
         writer.writerow([])  # Línea vacía
         
         # Información del vehículo
-        if hasattr(driver, 'vehiculo'):
+        if hasattr(driver, 'vehiculo') and driver.vehiculo:
             writer.writerow(['INFORMACIÓN DEL VEHÍCULO'])
             writer.writerow(['Placa', driver.vehiculo.placa])
             writer.writerow(['Marca', driver.vehiculo.marca])
@@ -340,27 +354,11 @@ def export_history(request, driver_id):
         writer.writerow(['Reportes', '2'])
         writer.writerow([])
         
-        # TODO: Agregar historial de viajes cuando implementes el modelo
-        # writer.writerow(['HISTORIAL DE VIAJES'])
-        # writer.writerow(['Fecha', 'Origen', 'Destino', 'Cliente', 'Estado', 'Calificación', 'Monto'])
-        # 
-        # trips = Trip.objects.filter(conductor=driver).order_by('-fecha')
-        # for trip in trips:
-        #     writer.writerow([
-        #         trip.fecha.strftime('%Y-%m-%d %H:%M'),
-        #         trip.origen,
-        #         trip.destino,
-        #         trip.cliente.get_nombre_completo(),
-        #         trip.estado,
-        #         trip.calificacion or 'N/A',
-        #         f'${trip.monto:,.0f}'
-        #     ])
-        
+       
         return response
     
     except Exception as e:
         return HttpResponse(f'Error al exportar: {str(e)}', status=500)
-
 
 
 @require_http_methods(["GET"])
@@ -388,10 +386,10 @@ def driver_statistics_api(request, driver_id):
                 'fecha_registro': driver.fecha_registro.strftime('%Y-%m-%d')
             },
             'vehiculo': {
-                'placa': driver.vehiculo.placa if hasattr(driver, 'vehiculo') else None,
-                'marca': driver.vehiculo.marca if hasattr(driver, 'vehiculo') else None,
-                'modelo': driver.vehiculo.modelo if hasattr(driver, 'vehiculo') else None,
-            } if hasattr(driver, 'vehiculo') else None,
+                'placa': driver.vehiculo.placa if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
+                'marca': driver.vehiculo.marca if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
+                'modelo': driver.vehiculo.modelo if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
+            } if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
             'stats': {
                 'total_viajes': 247,  # Placeholder
                 'calificacion_promedio': 4.8,
@@ -411,4 +409,47 @@ def driver_statistics_api(request, driver_id):
         return JsonResponse({
             'success': False,
             'message': f'Error al obtener estadísticas: {str(e)}'
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def driver_autocomplete_api(request):
+    """
+    API para autocompletado de conductores.
+    Devuelve lista de conductores que coinciden con el término de búsqueda.
+    """
+    try:
+        search_term = request.GET.get('q', '').strip()
+        
+        if not search_term or len(search_term) < 2:
+            return JsonResponse({'results': []})
+        
+        # Buscar conductores que coincidan con el término
+        conductores = Conductor.objects.select_related('user', 'vehiculo').filter(
+            Q(user__first_name__icontains=search_term) |
+            Q(user__last_name__icontains=search_term) |
+            Q(segundo_nombre__icontains=search_term) |
+            Q(segundo_apellido__icontains=search_term) |
+            Q(numero_documento__icontains=search_term) |
+            Q(vehiculo__placa__icontains=search_term)
+        )[:10]  # Limitar a 10 resultados
+        
+        results = []
+        for conductor in conductores:
+            placa = conductor.vehiculo.placa if hasattr(conductor, 'vehiculo') and conductor.vehiculo else 'Sin placa'
+            results.append({
+                'id': conductor.id,
+                'text': f"{conductor.get_nombre_completo()} - {conductor.numero_documento} - {placa}",
+                'nombre_completo': conductor.get_nombre_completo(),
+                'numero_documento': conductor.numero_documento,
+                'placa': placa,
+                'estado': conductor.estado
+            })
+        
+        return JsonResponse({'results': results})
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error en búsqueda: {str(e)}'
         }, status=500)
