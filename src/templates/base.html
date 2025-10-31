@@ -101,34 +101,30 @@
     </div>
 
     <!-- Barra lateral de perfil -->
-    <aside
-      id="sidebar"
-      class="fixed top-0 right-0 h-full w-72 bg-sky-600 text-white shadow-lg transform translate-x-full transition-transform duration-300 z-50"
-    >
-      <div class="p-6 border-b border-sky-500">
+<aside id="sidebar" class="fixed top-0 right-0 h-full w-72 bg-sky-600 text-white shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+    <div class="p-6 border-b border-sky-500">
         <h3 class="text-xl font-bold">Tu Perfil</h3>
-      </div>
-      <div class="p-6 space-y-3 text-sm">
-        <p>
-          <strong>Nombre completo:</strong> {{ request.user.first_name }} {{
-          request.user.last_name }}
-        </p>
+    </div>
+
+    <div class="p-6 space-y-3 text-sm">
+        <p><strong>Nombre completo:</strong> {{ request.user.first_name }} {{ request.user.last_name }}</p>
         <p><strong>Usuario:</strong> {{ request.user.username }}</p>
         <p><strong>Email:</strong> {{ request.user.email }}</p>
-        <p>
-          <strong>Fecha de ingreso:</strong> {{
-          request.user.date_joined|date:"d/m/Y H:i" }}
-        </p>
-      </div>
-      <div class="px-6 mt-6">
-        <a
-          href="{% url 'logout' %}"
-          class="block w-full text-center bg-white text-sky-600 font-semibold py-2 rounded hover:bg-gray-100 transition"
-        >
-          Salir
+        <p><strong>Fecha de ingreso:</strong> {{ request.user.date_joined|date:"d/m/Y H:i" }}</p>
+
+        {% if request.user.cliente %}
+        <p><strong>Empresa asociada:</strong> {{ request.user.cliente.compania.nombre }}</p>
+        {% else %}
+        <p><strong>Empresa asociada:</strong> —</p>
+        {% endif %}
+    </div>
+
+    <div class="px-6 mt-6">
+        <a href="{% url 'logout' %}" class="block w-full text-center bg-white text-sky-600 font-semibold py-2 rounded hover:bg-gray-100 transition">
+            Salir
         </a>
-      </div>
-    </aside>
+    </div>
+</aside>
 
     <!-- Script para mostrar/ocultar el menú y cerrarlo al hacer clic fuera -->
     <script>

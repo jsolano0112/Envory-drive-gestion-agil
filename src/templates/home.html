@@ -2,13 +2,27 @@
 
 {% block title %}EVORY DRIVE - Dashboard{% endblock %}
 
-{% block page_title %}Hola, {{ request.user.first_name|default:request.user.username }} 👋{% endblock %}
+{% block page_title %}
+Hola, {{ request.user.first_name|default:request.user.username }} 👋
+{% endblock %}
 
-{% block page_subtitle %}Bienvenido a EVORY DRIVE{% endblock %}
+{% block page_subtitle %}
+Bienvenido a EVORY DRIVE
+{% endblock %}
 
 {% block content %}
-    <!-- Mensaje de bienvenida -->
-    <section class="mb-8">
-        <p class="text-lg text-gray-700">Tu sesión está activa. Puedes acceder a tus módulos desde el menú lateral o revisar tu perfil.</p>
-    </section>
+<!-- Mensaje de bienvenida -->
+<section class="mb-8">
+    <p class="text-lg text-gray-700">
+        Tu sesión está activa. Puedes acceder a tus módulos desde el menú lateral o revisar tu perfil.
+    </p>
+</section>
+
+<!-- Botón de registro de cliente -->
+<section class="mt-6">
+    <a href="{% url 'client_registration' %}"
+       class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">
+        🧾 Registo Clientes
+    </a>
+</section>
 {% endblock %}
