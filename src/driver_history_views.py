@@ -5,9 +5,10 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Avg, Count
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import csv
 import io
+import random
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -40,19 +41,13 @@ def driver_history(request):
         ).select_related('user', 'vehiculo').first()
         
         if driver:
-            stats = {
-                'total_trips': 247,
-                'avg_rating': 4.8,
-                'completion_rate': 96,
-                'total_reports': 2
-            }
-                        # Data mockeada de viajes realista
+            # ========== GENERAR DATA MOCKEADA DE VIAJES ==========
             trips = []
             base_date = datetime.now()
 
-            for i in range(5):
-                # Fechas aleatorias en los últimos 30 días
-                days_ago = random.randint(0, 30)
+            for i in range(5):  # Cambia este número para más o menos viajes
+                # Fechas aleatorias en los últimos 90 días
+                days_ago = random.randint(0, 90)
                 trip_date = base_date - timedelta(days=days_ago, hours=random.randint(6, 22))
                 
                 # Estados posibles con probabilidades realistas
@@ -94,47 +89,90 @@ def driver_history(request):
                 }
                 trips.append(trip)
 
-            # Data mockeada de historial de estados realista
-            status_history = []
-            status_sequence = ['Pendiente', 'Aprobado', 'Activo', 'Suspendido', 'Aprobado', 'Activo']
-
-            current_date = driver.fecha_registro
-            admins = ['Admin Sistema', 'María González', 'Carlos Rodríguez', 'Supervisor General']
-
-            for i, new_status in enumerate(status_sequence):
-                if i == 0:  # Primer estado
-                    prev_status = 'Pendiente'
-                    title = 'Registro Inicial'
-                    reason = 'Registro inicial del conductor en la plataforma'
-                else:
-                    prev_status = status_sequence[i-1]
-                    transitions = {
-                        ('Pendiente', 'Aprobado'): ('Conductor Aprobado', 'Documentos verificados correctamente'),
-                        ('Aprobado', 'Activo'): ('Conductor Activado', 'Primer inicio de sesión exitoso'),
-                        ('Activo', 'Suspendido'): ('Conductor Suspendido', 'Queja de cliente por demora excesiva'),
-                        ('Suspendido', 'Aprobado'): ('Conductor Reactivado', 'Cumplimiento de condiciones de reactivación'),
+            # ========== OBTENER HISTORIAL DE ESTADOS ==========
+            try:
+                from .models import HistorialEstadoConductor
+                status_history = []
+                
+                # Obtener los últimos 20 cambios de estado
+                historial_estados = HistorialEstadoConductor.objects.filter(
+                    conductor=driver
+                ).select_related('usuario_modificador').order_by('-fecha_cambio')[:20]
+                
+                for cambio in historial_estados:
+                    # Crear títulos descriptivos según los estados
+                    titulos = {
+                        ('Pendiente de Verificación', 'En Corrección'): 'Documentos Pendientes de Corrección',
+                        ('En Corrección', 'Pendiente de Verificación'): 'Correcciones Enviadas',
+                        ('Pendiente de Verificación', 'Activo'): 'Conductor Aprobado y Activado',
+                        ('Pendiente de Verificación', 'Rechazado'): 'Conductor Rechazado',
+                        ('Activo', 'Inactivo'): 'Conductor Desactivado',
+                        ('Inactivo', 'Activo'): 'Conductor Reactivado',
+                        ('Activo', 'Suspendido'): 'Conductor Suspendido',
+                        ('Suspendido', 'Activo'): 'Suspensión Levantada',
+                        ('Activo', 'Bloqueado'): 'Conductor Bloqueado',
+                        ('Bloqueado', 'Activo'): 'Conductor Desbloqueado',
+                        ('Activo', 'Dado de Baja'): 'Conductor Dado de Baja',
                     }
-                    title, reason = transitions.get((prev_status, new_status), ('Cambio de Estado', 'Cambio administrativo'))
+                    
+                    title = titulos.get(
+                        (cambio.estado_anterior, cambio.estado_nuevo),
+                        f'Cambio de Estado: {cambio.estado_anterior} → {cambio.estado_nuevo}'
+                    )
+                    
+                    status_history.append({
+                        'id': cambio.id,
+                        'date': cambio.fecha_cambio,
+                        'title': title,
+                        'previous_status': cambio.estado_anterior,
+                        'new_status': cambio.estado_nuevo,
+                        'reason': cambio.descripcion_motivo or cambio.get_motivo_display(),
+                        'modified_by': cambio.usuario_modificador.get_full_name() if cambio.usuario_modificador else 'Sistema'
+                    })
+            
+            except (ImportError, AttributeError):
+                # Si el modelo no existe aún, usar data mockeada como fallback
+                status_history = []
+                status_sequence = ['Pendiente de Verificación', 'Activo', 'Suspendido', 'Activo', 'Inactivo', 'Activo']
                 
-                # Fechas progresivas
-                days_later = random.randint(1, 30) if i > 0 else 0
-                current_date += timedelta(days=days_later)
+                current_date = driver.fecha_registro
+                admins = ['Admin Sistema', 'María González', 'Carlos Rodríguez', 'Supervisor General']
                 
-                change = {
-                    'id': i + 1,
-                    'date': current_date,
-                    'title': title,
-                    'previous_status': prev_status,
-                    'new_status': new_status,
-                    'reason': reason,
-                    'modified_by': random.choice(admins)
-                }
-                status_history.append(change)
+                for i, new_status in enumerate(status_sequence):
+                    if i == 0:
+                        prev_status = 'Pendiente de Verificación'
+                        title = 'Registro Inicial'
+                        reason = 'Registro inicial del conductor en la plataforma'
+                    else:
+                        prev_status = status_sequence[i-1]
+                        transitions = {
+                            ('Pendiente de Verificación', 'Activo'): ('Conductor Aprobado', 'Documentos verificados correctamente'),
+                            ('Activo', 'Suspendido'): ('Conductor Suspendido', 'Queja de cliente por demora excesiva'),
+                            ('Suspendido', 'Activo'): ('Suspensión Levantada', 'Cumplimiento de condiciones de reactivación'),
+                            ('Activo', 'Inactivo'): ('Conductor Desactivado', 'Por decisión propia'),
+                            ('Inactivo', 'Activo'): ('Conductor Reactivado', 'Solicitud de reactivación aprobada'),
+                        }
+                        title, reason = transitions.get((prev_status, new_status), ('Cambio de Estado', 'Cambio administrativo'))
+                    
+                    days_later = random.randint(5, 30) if i > 0 else 0
+                    current_date = current_date + timedelta(days=days_later)
+                    
+                    change = {
+                        'id': i + 1,
+                        'date': current_date,
+                        'title': title,
+                        'previous_status': prev_status,
+                        'new_status': new_status,
+                        'reason': reason,
+                        'modified_by': random.choice(admins)
+                    }
+                    status_history.append(change)
 
-            # Estadísticas calculadas de la data mockeada
+            # ========== CALCULAR ESTADÍSTICAS ==========
             total_trips = len(trips)
             completed_trips = len([t for t in trips if t['status'] == 'Completado'])
-            avg_rating = sum(t['rating'] for t in trips if t['rating']) / len([t for t in trips if t['rating']]) if any(t['rating'] for t in trips) else 0
+            rated_trips = [t for t in trips if t['rating']]
+            avg_rating = sum(t['rating'] for t in rated_trips) / len(rated_trips) if rated_trips else 0
             completion_rate = int((completed_trips / total_trips * 100)) if total_trips > 0 else 0
 
             stats = {
@@ -144,6 +182,7 @@ def driver_history(request):
                 'total_reports': random.randint(0, 5)
             }
             
+            # ========== ACTUALIZAR CONTEXTO ==========
             context.update({
                 'driver': driver,
                 'stats': stats,
@@ -180,16 +219,22 @@ def update_driver_status(request, driver_id):
         driver.estado = new_status
         driver.save()
         
-        # TODO: Crear registro en historial de cambios de estado
-        # StatusHistory.objects.create(
-        #     conductor=driver,
-        #     previous_status=old_status,
-        #     new_status=new_status,
-        #     reason=request.POST.get('reason', 'Cambio manual'),
-        #     modified_by=request.user
-        # )
+        # Registrar el cambio en el historial
+        try:
+            from .models import HistorialEstadoConductor
+            
+            HistorialEstadoConductor.objects.create(
+                conductor=driver,
+                estado_anterior=old_status,
+                estado_nuevo=new_status,
+                motivo='Manual',
+                descripcion_motivo=request.POST.get('reason', 'Cambio manual por administrador'),
+                usuario_modificador=request.user
+            )
+        except (ImportError, AttributeError):
+            # Si el modelo no existe aún, continuar sin registrar
+            pass
         
-        # Redirigir de vuelta al historial con el mismo conductor
         return redirect(f"{request.META.get('HTTP_REFERER', '/')}?search={driver.numero_documento}")
     
     except Exception as e:
@@ -262,7 +307,7 @@ def generate_report(request, driver_id):
         # Espacio en blanco
         current_row = len(conductor_info) + 6
         
-        if report_type in ['mensual', 'diario']:
+        if report_type in ['monthly', 'daily']:
             # Reporte de viajes
             ws[f'A{current_row}'] = "REPORTE DE VIAJES"
             ws[f'A{current_row}'].font = Font(bold=True, size=14)
@@ -283,12 +328,6 @@ def generate_report(request, driver_id):
                 cell.fill = header_fill
                 cell.alignment = alignment_center
                 cell.border = border
-            
-            # TODO: Cuando tengas el modelo Trip, reemplaza estos datos de ejemplo
-            # trips = Trip.objects.filter(
-            #     conductor=driver,
-            #     fecha_inicio__date__range=[start_date_obj, end_date_obj]
-            # ).select_related('cliente')
             
             # Datos de ejemplo
             sample_trips = [
@@ -313,7 +352,7 @@ def generate_report(request, driver_id):
             ws[f'A{total_row}'].font = Font(bold=True)
             ws.merge_cells(f'A{total_row}:K{total_row}')
             
-        elif report_type == 'monetario':
+        elif report_type == 'monetary':
             # Reporte monetario
             ws[f'A{current_row}'] = "REPORTE MONETARIO"
             ws[f'A{current_row}'].font = Font(bold=True, size=14)
@@ -331,14 +370,8 @@ def generate_report(request, driver_id):
                 cell.alignment = alignment_center
                 cell.border = border
             
-            # TODO: Cuando tengas el modelo Trip, calcula el total real
-            # total_value = Trip.objects.filter(
-            #     conductor=driver,
-            #     fecha_inicio__date__range=[start_date_obj, end_date_obj]
-            # ).aggregate(total=Sum('valor'))['total'] or 0
-            
             # Datos de ejemplo
-            total_value = 2850000  # $2,850,000
+            total_value = 2850000
             
             data_row = header_row + 1
             ws.cell(row=data_row, column=1).value = driver.id
@@ -360,7 +393,6 @@ def generate_report(request, driver_id):
         wb.save(buffer)
         buffer.seek(0)
         
-        # Preparar la respuesta
         response = HttpResponse(
             buffer.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -379,55 +411,31 @@ def generate_report(request, driver_id):
 
 
 def export_history(request, driver_id):
-    """
-    Exporta el historial completo del conductor a CSV.
-    Incluye: información personal, vehículo, estadísticas y viajes.
-    """
+    """Exporta el historial completo del conductor a CSV"""
     try:
         driver = get_object_or_404(Conductor, id=driver_id)
         
-        # Crear respuesta CSV
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = f'attachment; filename="historial_{driver.numero_documento}.csv"'
-        
-        # Agregar BOM para Excel
         response.write('\ufeff')
         
         writer = csv.writer(response)
         
-        # Escribir información del conductor
         writer.writerow(['INFORMACIÓN DEL CONDUCTOR'])
         writer.writerow(['Nombre Completo', driver.get_nombre_completo()])
         writer.writerow(['Documento', driver.numero_documento])
         writer.writerow(['Email', driver.user.email])
-        writer.writerow(['Teléfono', driver.telefono_principal])
-        if driver.telefono_secundario:
-            writer.writerow(['Teléfono Secundario', driver.telefono_secundario])
-        writer.writerow(['Ciudad', driver.ciudad])
         writer.writerow(['Estado', driver.estado])
         writer.writerow(['Fecha Registro', driver.fecha_registro.strftime('%Y-%m-%d')])
-        writer.writerow([])  # Línea vacía
+        writer.writerow([])
         
-        # Información del vehículo
         if hasattr(driver, 'vehiculo') and driver.vehiculo:
             writer.writerow(['INFORMACIÓN DEL VEHÍCULO'])
             writer.writerow(['Placa', driver.vehiculo.placa])
             writer.writerow(['Marca', driver.vehiculo.marca])
             writer.writerow(['Modelo', driver.vehiculo.modelo])
-            writer.writerow(['Año', driver.vehiculo.anio])
-            writer.writerow(['Color', driver.vehiculo.color])
-            writer.writerow(['Tipo', driver.vehiculo.tipo_vehiculo])
             writer.writerow([])
         
-        # Estadísticas
-        writer.writerow(['ESTADÍSTICAS'])
-        writer.writerow(['Total Viajes', '247'])  # TODO: Reemplazar con datos reales
-        writer.writerow(['Calificación Promedio', '4.8'])
-        writer.writerow(['Tasa Completado', '96%'])
-        writer.writerow(['Reportes', '2'])
-        writer.writerow([])
-        
-       
         return response
     
     except Exception as e:
@@ -436,18 +444,9 @@ def export_history(request, driver_id):
 
 @require_http_methods(["GET"])
 def driver_statistics_api(request, driver_id):
-    """
-    Endpoint API para obtener estadísticas del conductor en formato JSON.
-    Útil para dashboards o consultas programáticas.
-    """
+    """Endpoint API para obtener estadísticas del conductor"""
     try:
         driver = get_object_or_404(Conductor, id=driver_id)
-        
-        # TODO: Calcular con datos reales cuando tengas el modelo Trip
-        # trips = Trip.objects.filter(conductor=driver)
-        # total_trips = trips.count()
-        # completed_trips = trips.filter(estado='Completado').count()
-        # avg_rating = trips.filter(calificacion__isnull=False).aggregate(Avg('calificacion'))['calificacion__avg']
         
         statistics = {
             'conductor': {
@@ -464,40 +463,31 @@ def driver_statistics_api(request, driver_id):
                 'modelo': driver.vehiculo.modelo if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
             } if hasattr(driver, 'vehiculo') and driver.vehiculo else None,
             'stats': {
-                'total_viajes': 247,  # Placeholder
+                'total_viajes': 247,
                 'calificacion_promedio': 4.8,
                 'tasa_completado': 96,
                 'total_reportes': 2,
-                'viajes_mes_actual': 28,
-                'ingresos_totales': 8950000
             }
         }
         
-        return JsonResponse({
-            'success': True,
-            'data': statistics
-        }, status=200)
+        return JsonResponse({'success': True, 'data': statistics})
     
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': f'Error al obtener estadísticas: {str(e)}'
+            'message': f'Error: {str(e)}'
         }, status=500)
 
 
 @require_http_methods(["GET"])
 def driver_autocomplete_api(request):
-    """
-    API para autocompletado de conductores.
-    Devuelve lista de conductores que coinciden con el término de búsqueda.
-    """
+    """API para autocompletado de conductores"""
     try:
         search_term = request.GET.get('q', '').strip()
         
         if not search_term or len(search_term) < 2:
             return JsonResponse({'results': []})
         
-        # Buscar conductores que coincidan con el término
         conductores = Conductor.objects.select_related('user', 'vehiculo').filter(
             Q(user__first_name__icontains=search_term) |
             Q(user__last_name__icontains=search_term) |
@@ -505,14 +495,13 @@ def driver_autocomplete_api(request):
             Q(segundo_apellido__icontains=search_term) |
             Q(numero_documento__icontains=search_term) |
             Q(vehiculo__placa__icontains=search_term)
-        )[:10]  # Limitar a 10 resultados
+        )[:10]
         
         results = []
         for conductor in conductores:
             placa = conductor.vehiculo.placa if hasattr(conductor, 'vehiculo') and conductor.vehiculo else 'Sin placa'
             results.append({
                 'id': conductor.id,
-                'text': f"{conductor.get_nombre_completo()} - {conductor.numero_documento} - {placa}",
                 'nombre_completo': conductor.get_nombre_completo(),
                 'numero_documento': conductor.numero_documento,
                 'placa': placa,
@@ -524,59 +513,5 @@ def driver_autocomplete_api(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': f'Error en búsqueda: {str(e)}'
+            'message': f'Error: {str(e)}'
         }, status=500)
-        
-# TODO: Obtener viajes reales
-# trips = trips_queryset.select_related('cliente').order_by('-fecha')[:20]
-from datetime import datetime, date, timedelta
-import csv
-import random
-
-# Data mockeada de viajes realista
-trips = []
-base_date = datetime.now()
-
-for i in range(5):
-    # Fechas aleatorias en los últimos 30 días
-    days_ago = random.randint(0, 30)
-    trip_date = base_date - timedelta(days=days_ago, hours=random.randint(6, 22))
-    
-    # Estados posibles con probabilidades realistas
-    status_weights = [('Completado', 0.85), ('Cancelado', 0.10), ('En Progreso', 0.04), ('Aceptado', 0.01)]
-    status = random.choices([s[0] for s in status_weights], weights=[s[1] for s in status_weights])[0]
-    
-    # Calificación solo para viajes completados
-    rating = random.choice([4.5, 5.0, 4.0, 4.5, 3.5, 5.0, 4.0, 4.5, 5.0, 3.0]) if status == 'Completado' and random.random() > 0.1 else None
-    
-    # Ubicaciones realistas en Bogotá
-    locations = [
-        'Centro Internacional', 'Aeropuerto El Dorado', 'Zona Rosa', 'Parque de la 93',
-        'Centro Andino', 'Gran Estación', 'Plaza de las Américas', 'Calle 80',
-        'Centro Empresarial Santa Fe', 'Parque Nacional', 'Usaquén', 'Chapinero',
-        'Salitre Plaza', 'Portal Norte', 'Calle 170', 'Centro Histórico'
-    ]
-    
-    origin = random.choice(locations)
-    destination = random.choice([loc for loc in locations if loc != origin])
-    
-    # Clientes mockeados
-    clients = [
-        'María González', 'Carlos Rodríguez', 'Ana López', 'Juan Martínez', 
-        'Laura Sánchez', 'Diego Pérez', 'Camila Torres', 'Andrés Ramírez',
-        'Valentina Morales', 'Santiago Herrera', 'Isabella Castro', 'Mateo Vargas'
-    ]
-    
-    trip = {
-        'id': f'TRP{1000 + i}',
-        'date': trip_date,
-        'status': status,
-        'rating': rating,
-        'origin': origin,
-        'destination': destination,
-        'client': random.choice(clients),
-        'amount': random.randint(15000, 45000),
-        'distance': round(random.uniform(5.0, 25.0), 1),
-        'duration': f"{random.randint(20, 90):02d}:{random.randint(0, 59):02d}:00"
-    }
-    trips.append(trip)
