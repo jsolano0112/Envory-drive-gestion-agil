@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import RegexValidator
-
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 # ====================================
 # MODELO: COMPAÑÍA
 # ====================================
@@ -459,3 +458,310 @@ class DocumentoConductor(models.Model):
     
     def __str__(self):
         return f"{self.conductor.get_nombre_completo()} - {self.get_tipo_documento_display()}"
+    
+# Agregar al final de models.py
+
+# ====================================
+# MODELO: VIAJE
+# ====================================
+class Viaje(models.Model):
+    """
+    Modelo para los viajes realizados por los conductores.
+    """
+    
+    ESTADO_CHOICES = [
+        ('Solicitado', 'Solicitado'),
+        ('Aceptado', 'Aceptado'),
+        ('En Progreso', 'En Progreso'),
+        ('Completado', 'Completado'),
+        ('Cancelado', 'Cancelado'),
+        ('Rechazado', 'Rechazado'),
+    ]
+    
+    conductor = models.ForeignKey(
+        Conductor,
+        on_delete=models.CASCADE,
+        related_name='viajes',
+        verbose_name="Conductor"
+    )
+    
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.CASCADE,
+        related_name='viajes',
+        verbose_name="Cliente"
+    )
+    
+    fecha_solicitud = models.DateTimeField(
+        verbose_name="Fecha de Solicitud"
+    )
+    
+    fecha_inicio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Inicio"
+    )
+    
+    fecha_fin = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Fin"
+    )
+    
+    estado = models.CharField(
+        max_length=15,
+        choices=ESTADO_CHOICES,
+        default='Solicitado',
+        verbose_name="Estado del Viaje"
+    )
+    
+    # Ubicaciones
+    origen = models.CharField(
+        max_length=100,
+        verbose_name="Dirección de Origen"
+    )
+    
+    destino = models.CharField(
+        max_length=100,
+        verbose_name="Dirección de Destino"
+    )
+    
+    # Información del viaje
+    distancia_km = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Distancia (km)"
+    )
+    
+    tiempo_estimado = models.DurationField(
+        null=True,
+        blank=True,
+        verbose_name="Tiempo Estimado"
+    )
+    
+    tiempo_real = models.DurationField(
+        null=True,
+        blank=True,
+        verbose_name="Tiempo Real"
+    )
+    
+    # Calificación y comentarios
+    calificacion_cliente = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name="Calificación del Cliente"
+    )
+    
+    comentario_cliente = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Comentario del Cliente"
+    )
+    
+    calificacion_conductor = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name="Calificación del Conductor"
+    )
+    
+    comentario_conductor = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Comentario del Conductor"
+    )
+    
+    # Costos
+    valor_base = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor Base"
+    )
+    
+    valor_adicional = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Valor Adicional"
+    )
+    
+    descuento = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Descuento"
+    )
+    
+    valor_total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor Total"
+    )
+    
+    # Método de pago
+    METODO_PAGO_CHOICES = [
+        ('Efectivo', 'Efectivo'),
+        ('Tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('Transferencia', 'Transferencia Bancaria'),
+        ('App', 'Pago en App'),
+    ]
+    
+    metodo_pago = models.CharField(
+        max_length=15,
+        choices=METODO_PAGO_CHOICES,
+        default='Efectivo',
+        verbose_name="Método de Pago"
+    )
+    
+    # Información adicional
+    notas = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Notas Adicionales"
+    )
+    
+    class Meta:
+        db_table = 'viaje'
+        verbose_name = 'Viaje'
+        verbose_name_plural = 'Viajes'
+        ordering = ['-fecha_solicitud']
+        indexes = [
+            models.Index(fields=['conductor', '-fecha_solicitud']),
+            models.Index(fields=['cliente', '-fecha_solicitud']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['fecha_solicitud']),
+        ]
+    
+    def __str__(self):
+        return f"Viaje {self.id} - {self.conductor.get_nombre_completo()} → {self.origen[:30]}"
+    
+    def get_duracion_formateada(self):
+        """Retorna la duración en formato legible"""
+        if self.tiempo_real:
+            total_seconds = int(self.tiempo_real.total_seconds())
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return "N/A"
+
+
+# ====================================
+# MODELO: HISTORIAL DE ESTADOS
+# ====================================
+class HistorialEstadoConductor(models.Model):
+    """
+    Modelo para mantener el historial de cambios de estado de los conductores.
+    """
+    
+    conductor = models.ForeignKey(
+        Conductor,
+        on_delete=models.CASCADE,
+        related_name='historial_estados',
+        verbose_name="Conductor"
+    )
+    
+    estado_anterior = models.CharField(
+        max_length=15,
+        choices=Conductor.ESTADO_CHOICES,
+        verbose_name="Estado Anterior"
+    )
+    
+    estado_nuevo = models.CharField(
+        max_length=15,
+        choices=Conductor.ESTADO_CHOICES,
+        verbose_name="Estado Nuevo"
+    )
+    
+    fecha_cambio = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha del Cambio"
+    )
+    
+    MOTIVO_CHOICES = [
+        ('Registro', 'Registro inicial'),
+        ('Verificacion', 'Verificación de documentos'),
+        ('Pago', 'Pago pendiente'),
+        ('Queja', 'Queja de cliente'),
+        ('Mantenimiento', 'Mantenimiento del vehículo'),
+        ('Licencia', 'Licencia vencida'),
+        ('Manual', 'Cambio manual por administrador'),
+        ('Reincidente', 'Comportamiento reincidente'),
+        ('Reactivacion', 'Reactivación por cumplimiento'),
+        ('Otro', 'Otro motivo'),
+    ]
+    
+    motivo = models.CharField(
+        max_length=20,
+        choices=MOTIVO_CHOICES,
+        default='Manual',
+        verbose_name="Motivo del Cambio"
+    )
+    
+    descripcion_motivo = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Descripción del Motivo"
+    )
+    
+    usuario_modificador = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cambios_estado_conductores',
+        verbose_name="Usuario que realizó el cambio"
+    )
+    
+    # Información adicional
+    notas_internas = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Notas Internas"
+    )
+    
+    # Campos automáticos
+    ip_modificador = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP del modificador"
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="User Agent"
+    )
+    
+    class Meta:
+        db_table = 'historial_estado_conductor'
+        verbose_name = 'Cambio de Estado del Conductor'
+        verbose_name_plural = 'Historial de Estados de Conductores'
+        ordering = ['-fecha_cambio']
+        indexes = [
+            models.Index(fields=['conductor', '-fecha_cambio']),
+            models.Index(fields=['fecha_cambio']),
+            models.Index(fields=['motivo']),
+        ]
+    
+    def __str__(self):
+        return f"{self.conductor.get_nombre_completo()} - {self.estado_anterior} → {self.estado_nuevo}"
+    
+    def get_titulo_cambio(self):
+        """Retorna un título descriptivo del cambio"""
+        transiciones = {
+            ('Pendiente', 'Aprobado'): 'Conductor Aprobado',
+            ('Pendiente', 'Rechazado'): 'Conductor Rechazado',
+            ('Aprobado', 'Suspendido'): 'Conductor Suspendido',
+            ('Suspendido', 'Aprobado'): 'Conductor Reactivado',
+            ('Aprobado', 'Activo'): 'Conductor Activado',
+            ('Activo', 'Inactivo'): 'Conductor Desactivado',
+        }
+        return transiciones.get((self.estado_anterior, self.estado_nuevo), 
+                               f'Cambio de Estado: {self.estado_anterior} → {self.estado_nuevo}')
