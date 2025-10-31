@@ -41,9 +41,10 @@ urlpatterns = [
     # ====================================
     # Vista principal del historial
     path('detalle-conductor/', driver_history_views.driver_history, name='driver_history'),    
-    # # API Endpoints para gestión de conductores
+    # API Endpoints para gestión de conductores
     path('api/driver/<int:driver_id>/update-status/', driver_history_views.update_driver_status, name='update_driver_status'),
     path('api/driver/<int:driver_id>/generate-report/', driver_history_views.generate_report, name='generate_report'),
     path('api/driver/<int:driver_id>/export-history/', driver_history_views.export_history, name='export_history'),
     path('api/driver/<int:driver_id>/statistics/', driver_history_views.driver_statistics_api, name='driver_statistics_api'),
+    path('api/driver/autocomplete/', driver_history_views.driver_autocomplete_api, name='driver_autocomplete_api'),
 ]

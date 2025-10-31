@@ -40,33 +40,109 @@ def driver_history(request):
         ).select_related('user', 'vehiculo').first()
         
         if driver:
-            # TODO: Cuando tengas el modelo de Viajes (Trip), reemplaza esto:
-            # Calcular estadísticas reales
-            # trips_queryset = Trip.objects.filter(conductor=driver)
-            
-            # Por ahora, datos de ejemplo:
             stats = {
                 'total_trips': 247,
                 'avg_rating': 4.8,
                 'completion_rate': 96,
                 'total_reports': 2
             }
-            
-            # TODO: Filtrar viajes por fecha cuando implementes el modelo Trip
-            # if date_start and date_end:
-            #     trips_queryset = trips_queryset.filter(
-            #         fecha__range=[date_start, date_end]
-            #     )
-            
-            # TODO: Obtener viajes reales
-            # trips = trips_queryset.select_related('cliente').order_by('-fecha')[:20]
-            trips = []  # Placeholder
-            
-            # TODO: Obtener historial de estados real cuando implementes el modelo
-            # status_history = StatusHistory.objects.filter(
-            #     conductor=driver
-            # ).order_by('-fecha')[:20]
-            status_history = []  # Placeholder
+                        # Data mockeada de viajes realista
+            trips = []
+            base_date = datetime.now()
+
+            for i in range(5):
+                # Fechas aleatorias en los últimos 30 días
+                days_ago = random.randint(0, 30)
+                trip_date = base_date - timedelta(days=days_ago, hours=random.randint(6, 22))
+                
+                # Estados posibles con probabilidades realistas
+                status_weights = [('Completado', 0.85), ('Cancelado', 0.10), ('En Progreso', 0.04), ('Aceptado', 0.01)]
+                status = random.choices([s[0] for s in status_weights], weights=[s[1] for s in status_weights])[0]
+                
+                # Calificación solo para viajes completados
+                rating = random.choice([4.5, 5.0, 4.0, 4.5, 3.5, 5.0, 4.0, 4.5, 5.0, 3.0]) if status == 'Completado' and random.random() > 0.1 else None
+                
+                # Ubicaciones realistas en Bogotá
+                locations = [
+                    'Centro Internacional', 'Aeropuerto El Dorado', 'Zona Rosa', 'Parque de la 93',
+                    'Centro Andino', 'Gran Estación', 'Plaza de las Américas', 'Calle 80',
+                    'Centro Empresarial Santa Fe', 'Parque Nacional', 'Usaquén', 'Chapinero',
+                    'Salitre Plaza', 'Portal Norte', 'Calle 170', 'Centro Histórico'
+                ]
+                
+                origin = random.choice(locations)
+                destination = random.choice([loc for loc in locations if loc != origin])
+                
+                # Clientes mockeados
+                clients = [
+                    'María González', 'Carlos Rodríguez', 'Ana López', 'Juan Martínez', 
+                    'Laura Sánchez', 'Diego Pérez', 'Camila Torres', 'Andrés Ramírez',
+                    'Valentina Morales', 'Santiago Herrera', 'Isabella Castro', 'Mateo Vargas'
+                ]
+                
+                trip = {
+                    'id': f'TRP{1000 + i}',
+                    'date': trip_date,
+                    'status': status,
+                    'rating': rating,
+                    'origin': origin,
+                    'destination': destination,
+                    'client': random.choice(clients),
+                    'amount': random.randint(15000, 45000),
+                    'distance': round(random.uniform(5.0, 25.0), 1),
+                    'duration': f"{random.randint(20, 90):02d}:{random.randint(0, 59):02d}:00"
+                }
+                trips.append(trip)
+
+            # Data mockeada de historial de estados realista
+            status_history = []
+            status_sequence = ['Pendiente', 'Aprobado', 'Activo', 'Suspendido', 'Aprobado', 'Activo']
+
+            current_date = driver.fecha_registro
+            admins = ['Admin Sistema', 'María González', 'Carlos Rodríguez', 'Supervisor General']
+
+            for i, new_status in enumerate(status_sequence):
+                if i == 0:  # Primer estado
+                    prev_status = 'Pendiente'
+                    title = 'Registro Inicial'
+                    reason = 'Registro inicial del conductor en la plataforma'
+                else:
+                    prev_status = status_sequence[i-1]
+                    transitions = {
+                        ('Pendiente', 'Aprobado'): ('Conductor Aprobado', 'Documentos verificados correctamente'),
+                        ('Aprobado', 'Activo'): ('Conductor Activado', 'Primer inicio de sesión exitoso'),
+                        ('Activo', 'Suspendido'): ('Conductor Suspendido', 'Queja de cliente por demora excesiva'),
+                        ('Suspendido', 'Aprobado'): ('Conductor Reactivado', 'Cumplimiento de condiciones de reactivación'),
+                    }
+                    title, reason = transitions.get((prev_status, new_status), ('Cambio de Estado', 'Cambio administrativo'))
+                
+                # Fechas progresivas
+                days_later = random.randint(1, 30) if i > 0 else 0
+                current_date += timedelta(days=days_later)
+                
+                change = {
+                    'id': i + 1,
+                    'date': current_date,
+                    'title': title,
+                    'previous_status': prev_status,
+                    'new_status': new_status,
+                    'reason': reason,
+                    'modified_by': random.choice(admins)
+                }
+                status_history.append(change)
+
+            # Estadísticas calculadas de la data mockeada
+            total_trips = len(trips)
+            completed_trips = len([t for t in trips if t['status'] == 'Completado'])
+            avg_rating = sum(t['rating'] for t in trips if t['rating']) / len([t for t in trips if t['rating']]) if any(t['rating'] for t in trips) else 0
+            completion_rate = int((completed_trips / total_trips * 100)) if total_trips > 0 else 0
+
+            stats = {
+                'total_trips': total_trips,
+                'avg_rating': round(avg_rating, 1) if avg_rating > 0 else 4.8,
+                'completion_rate': completion_rate,
+                'total_reports': random.randint(0, 5)
+            }
             
             context.update({
                 'driver': driver,
@@ -85,9 +161,6 @@ def driver_history(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def update_driver_status(request, driver_id):
-    """
-    Actualiza el estado del conductor y registra el cambio en el historial.
-    """
     try:
         driver = get_object_or_404(Conductor, id=driver_id)
         new_status = request.POST.get('status')
@@ -453,3 +526,57 @@ def driver_autocomplete_api(request):
             'success': False,
             'message': f'Error en búsqueda: {str(e)}'
         }, status=500)
+        
+# TODO: Obtener viajes reales
+# trips = trips_queryset.select_related('cliente').order_by('-fecha')[:20]
+from datetime import datetime, date, timedelta
+import csv
+import random
+
+# Data mockeada de viajes realista
+trips = []
+base_date = datetime.now()
+
+for i in range(5):
+    # Fechas aleatorias en los últimos 30 días
+    days_ago = random.randint(0, 30)
+    trip_date = base_date - timedelta(days=days_ago, hours=random.randint(6, 22))
+    
+    # Estados posibles con probabilidades realistas
+    status_weights = [('Completado', 0.85), ('Cancelado', 0.10), ('En Progreso', 0.04), ('Aceptado', 0.01)]
+    status = random.choices([s[0] for s in status_weights], weights=[s[1] for s in status_weights])[0]
+    
+    # Calificación solo para viajes completados
+    rating = random.choice([4.5, 5.0, 4.0, 4.5, 3.5, 5.0, 4.0, 4.5, 5.0, 3.0]) if status == 'Completado' and random.random() > 0.1 else None
+    
+    # Ubicaciones realistas en Bogotá
+    locations = [
+        'Centro Internacional', 'Aeropuerto El Dorado', 'Zona Rosa', 'Parque de la 93',
+        'Centro Andino', 'Gran Estación', 'Plaza de las Américas', 'Calle 80',
+        'Centro Empresarial Santa Fe', 'Parque Nacional', 'Usaquén', 'Chapinero',
+        'Salitre Plaza', 'Portal Norte', 'Calle 170', 'Centro Histórico'
+    ]
+    
+    origin = random.choice(locations)
+    destination = random.choice([loc for loc in locations if loc != origin])
+    
+    # Clientes mockeados
+    clients = [
+        'María González', 'Carlos Rodríguez', 'Ana López', 'Juan Martínez', 
+        'Laura Sánchez', 'Diego Pérez', 'Camila Torres', 'Andrés Ramírez',
+        'Valentina Morales', 'Santiago Herrera', 'Isabella Castro', 'Mateo Vargas'
+    ]
+    
+    trip = {
+        'id': f'TRP{1000 + i}',
+        'date': trip_date,
+        'status': status,
+        'rating': rating,
+        'origin': origin,
+        'destination': destination,
+        'client': random.choice(clients),
+        'amount': random.randint(15000, 45000),
+        'distance': round(random.uniform(5.0, 25.0), 1),
+        'duration': f"{random.randint(20, 90):02d}:{random.randint(0, 59):02d}:00"
+    }
+    trips.append(trip)

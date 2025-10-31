@@ -120,7 +120,7 @@
         </div>
 
         <!-- Estadísticas -->
-        <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-3 gap-4 mb-6">
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
                 <div class="text-3xl font-bold">{{ stats.total_trips }}</div>
                 <div class="text-sm opacity-90 mt-1">Viajes Realizados</div>
@@ -132,10 +132,6 @@
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
                 <div class="text-3xl font-bold">{{ stats.completion_rate }}%</div>
                 <div class="text-sm opacity-90 mt-1">Viajes Completados</div>
-            </div>
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
-                <div class="text-3xl font-bold">{{ stats.total_reports }}</div>
-                <div class="text-sm opacity-90 mt-1">Reportes Recibidos</div>
             </div>
         </div>
 
@@ -167,7 +163,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Estado:</span>
-                        <span class="font-medium text-green-600">{{ driver.estado }}</span>
+                        <span class="font-medium text-bold-600">{{ driver.estado }}</span>
                     </div>
                 </div>
             </div>
