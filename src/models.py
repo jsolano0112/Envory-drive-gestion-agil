@@ -257,14 +257,18 @@ class Conductor(models.Model):
     
     # Estados del conductor
     ESTADO_CHOICES = [
-        ('Pendiente', 'Pendiente de Verificación'),
-        ('Aprobado', 'Aprobado'),
-        ('Rechazado', 'Rechazado'),
+        ('Pendiente de Verificación', 'Pendiente de Verificación'),
+        ('En Corrección', 'En Corrección'),
+        ('Activo', 'Activo'),
+        ('Inactivo', 'Inactivo'),
         ('Suspendido', 'Suspendido'),
+        ('Bloqueado', 'Bloqueado'),
+        ('Rechazado', 'Rechazado'),
+        ('Dado de Baja', 'Dado de Baja'),
     ]
     
     estado = models.CharField(
-        max_length=15,
+        max_length=40,
         choices=ESTADO_CHOICES,
         default='Pendiente',
         verbose_name="Estado"
@@ -668,13 +672,13 @@ class HistorialEstadoConductor(models.Model):
     )
     
     estado_anterior = models.CharField(
-        max_length=15,
+        max_length=40,
         choices=Conductor.ESTADO_CHOICES,
         verbose_name="Estado Anterior"
     )
     
     estado_nuevo = models.CharField(
-        max_length=15,
+        max_length=40,
         choices=Conductor.ESTADO_CHOICES,
         verbose_name="Estado Nuevo"
     )
@@ -687,13 +691,18 @@ class HistorialEstadoConductor(models.Model):
     MOTIVO_CHOICES = [
         ('Registro', 'Registro inicial'),
         ('Verificacion', 'Verificación de documentos'),
-        ('Pago', 'Pago pendiente'),
-        ('Queja', 'Queja de cliente'),
-        ('Mantenimiento', 'Mantenimiento del vehículo'),
-        ('Licencia', 'Licencia vencida'),
-        ('Manual', 'Cambio manual por administrador'),
-        ('Reincidente', 'Comportamiento reincidente'),
+        ('Correccion', 'Solicitud de corrección'),
+        ('Aprobacion', 'Aprobación de documentos'),
+        ('Activacion', 'Activación manual'),
+        ('Inactivacion', 'Inactivación voluntaria'),
+        ('Suspension', 'Suspensión por incumplimiento'),
+        ('Bloqueo', 'Bloqueo por infracciones graves'),
+        ('Rechazo', 'Rechazo por no cumplir requisitos'),
+        ('Baja', 'Dado de baja'),
         ('Reactivacion', 'Reactivación por cumplimiento'),
+        ('Licencia', 'Licencia vencida'),
+        ('Queja', 'Queja de cliente'),
+        ('Pago', 'Pago pendiente'),
         ('Otro', 'Otro motivo'),
     ]
     
