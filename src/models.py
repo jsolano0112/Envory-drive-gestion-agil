@@ -4,46 +4,15 @@ from django.core.validators import RegexValidator, MinValueValidator, MaxValueVa
 # ====================================
 # MODELO: COMPAÑÍA
 # ====================================
+# Asumido temporalmente - ajustar cuando el Módulo 1 esté disponible
 class Compania(models.Model):
     """
     Modelo para las compañías asociadas que tienen acceso a la plataforma.
-    Incluye información detallada para gestión administrativa.
+    Módulo 1 (aprobado) - Este modelo debe existir ya.
+    Si hay diferencias, ajustar las referencias en Cliente.
     """
-    # Información básica
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Compañía")
-    razon_social = models.CharField(max_length=150, blank=True, default='', verbose_name="Razón Social")
     nit = models.CharField(max_length=20, unique=True, verbose_name="NIT")
-    
-    # Información de contacto
-    direccion = models.CharField(max_length=200, blank=True, default='', verbose_name="Dirección")
-    telefono = models.CharField(
-        max_length=10,
-        blank=True,
-        default='',
-        validators=[RegexValidator(r'^[0-9]{10}$', 'El teléfono debe tener 10 dígitos')],
-        verbose_name="Teléfono"
-    )
-    email_corporativo = models.EmailField(blank=True, default='', verbose_name="Email Corporativo")
-    persona_contacto = models.CharField(max_length=100, blank=True, default='', verbose_name="Persona de Contacto")
-    
-    # Información administrativa
-    fecha_membresia = models.DateField(null=True, blank=True, verbose_name="Fecha de Membresía")
-    
-    ESTADO_CUENTA_CHOICES = [
-        ('Activa', 'Activa'),
-        ('Suspendida', 'Suspendida'),
-        ('Morosa', 'Morosa'),
-        ('Cancelada', 'Cancelada'),
-    ]
-    
-    estado_cuenta = models.CharField(
-        max_length=20,
-        choices=ESTADO_CUENTA_CHOICES,
-        default='Activa',
-        verbose_name="Estado de Cuenta"
-    )
-    
-    # Campo de auditoría
     estado = models.BooleanField(default=True, verbose_name="Activa")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     
@@ -52,10 +21,6 @@ class Compania(models.Model):
         verbose_name = 'Compañía'
         verbose_name_plural = 'Compañías'
         ordering = ['nombre']
-        indexes = [
-            models.Index(fields=['nit']),
-            models.Index(fields=['estado_cuenta']),
-        ]
     
     def __str__(self):
         return self.nombre
@@ -132,14 +97,6 @@ class Cliente(models.Model):
         on_delete=models.CASCADE,
         related_name='clientes',
         verbose_name="Compañía Asociada"
-    )
-    
-    # Campo adicional para detalle de compañía
-    cargo = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name="Cargo/Posición"
     )
     
     # Campos de auditoría
@@ -817,150 +774,3 @@ class HistorialEstadoConductor(models.Model):
         }
         return transiciones.get((self.estado_anterior, self.estado_nuevo), 
                                f'Cambio de Estado: {self.estado_anterior} → {self.estado_nuevo}')
-
-
-# ====================================
-# MODELO: NOVEDAD
-# ====================================
-class Novedad(models.Model):
-    """
-    Modelo para registrar novedades relacionadas con viajes, conductores o clientes.
-    """
-    
-    TIPO_NOVEDAD_CHOICES = [
-        ('Accidente', 'Accidente'),
-        ('Retraso', 'Retraso'),
-        ('Cancelación', 'Cancelación'),
-        ('Queja Cliente', 'Queja del Cliente'),
-        ('Queja Conductor', 'Queja del Conductor'),
-        ('Vehículo Averiado', 'Vehículo Averiado'),
-        ('Cambio de Ruta', 'Cambio de Ruta'),
-        ('Incidente', 'Incidente'),
-        ('Otro', 'Otro'),
-    ]
-    
-    ESTADO_NOVEDAD_CHOICES = [
-        ('Pendiente', 'Pendiente'),
-        ('En Revisión', 'En Revisión'),
-        ('Resuelta', 'Resuelta'),
-        ('Cerrada', 'Cerrada'),
-        ('Escalada', 'Escalada'),
-    ]
-    
-    # Relaciones
-    viaje = models.ForeignKey(
-        Viaje,
-        on_delete=models.CASCADE,
-        related_name='novedades',
-        null=True,
-        blank=True,
-        verbose_name="Viaje Asociado"
-    )
-    
-    conductor = models.ForeignKey(
-        Conductor,
-        on_delete=models.CASCADE,
-        related_name='novedades',
-        null=True,
-        blank=True,
-        verbose_name="Conductor Involucrado"
-    )
-    
-    cliente = models.ForeignKey(
-        Cliente,
-        on_delete=models.CASCADE,
-        related_name='novedades',
-        null=True,
-        blank=True,
-        verbose_name="Cliente Involucrado"
-    )
-    
-    compania = models.ForeignKey(
-        Compania,
-        on_delete=models.CASCADE,
-        related_name='novedades',
-        null=True,
-        blank=True,
-        verbose_name="Compañía Asociada"
-    )
-    
-    # Información de la novedad
-    tipo_novedad = models.CharField(
-        max_length=30,
-        choices=TIPO_NOVEDAD_CHOICES,
-        verbose_name="Tipo de Novedad"
-    )
-    
-    descripcion = models.TextField(verbose_name="Descripción")
-    
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADO_NOVEDAD_CHOICES,
-        default='Pendiente',
-        verbose_name="Estado"
-    )
-    
-    # Auditoría
-    creado_por = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='novedades_creadas',
-        verbose_name="Creado Por"
-    )
-    
-    fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de Creación"
-    )
-    
-    fecha_resolucion = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de Resolución"
-    )
-    
-    resolucion = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name="Resolución"
-    )
-    
-    resuelto_por = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='novedades_resueltas',
-        verbose_name="Resuelto Por"
-    )
-    
-    # Prioridad
-    PRIORIDAD_CHOICES = [
-        ('Baja', 'Baja'),
-        ('Media', 'Media'),
-        ('Alta', 'Alta'),
-        ('Crítica', 'Crítica'),
-    ]
-    
-    prioridad = models.CharField(
-        max_length=10,
-        choices=PRIORIDAD_CHOICES,
-        default='Media',
-        verbose_name="Prioridad"
-    )
-    
-    class Meta:
-        db_table = 'novedad'
-        verbose_name = 'Novedad'
-        verbose_name_plural = 'Novedades'
-        ordering = ['-fecha_creacion']
-        indexes = [
-            models.Index(fields=['tipo_novedad']),
-            models.Index(fields=['estado']),
-            models.Index(fields=['fecha_creacion']),
-            models.Index(fields=['compania', '-fecha_creacion']),
-        ]
-    
-    def __str__(self):
-        return f"{self.tipo_novedad} - {self.estado} ({self.fecha_creacion.strftime('%Y-%m-%d')})"
