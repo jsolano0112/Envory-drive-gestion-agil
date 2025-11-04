@@ -128,3 +128,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ====================================
+# CONFIGURACIÓN DE AUTENTICACIÓN
+# ====================================
+LOGIN_URL = '/'  # Redirige al inicio si no está autenticado
+LOGIN_REDIRECT_URL = '/home/'  # Redirige a home después del login
+LOGOUT_REDIRECT_URL = '/'  # Redirige al inicio después del logout
