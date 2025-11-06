@@ -133,8 +133,6 @@ def actualizar_clientes_con_cargo():
     print(f"\nTotal clientes actualizados: {clientes.count()}")
 
 
-
-
 def crear_novedades_prueba():
     """Crear novedades de prueba"""
     print("\n=== CREANDO NOVEDADES DE PRUEBA ===")
