@@ -4,6 +4,19 @@ from . import views
 from . import driver_history_views
 
 urlpatterns = [
+    # Listas
+    path('conductores/activos/', views.conductores_activos, name='conductores_activos'),
+    path('conductores/inactivos/', views.conductores_inactivos, name='conductores_inactivos'), 
+    path('conductores/todos/', views.conductores_todos, name='conductores_todos'),              
+
+    # Detalle y acciones
+    path('conductores/<int:id>/', views.detalle_conductor, name='detalle_conductor'),
+    path('conductores/<int:id>/activar/', views.activar_conductor, name='activar_conductor'),
+    path('conductores/<int:id>/desactivar/', views.desactivar_conductor, name='desactivar_conductor'),
+    path('conductores/<int:id>/eliminar/', views.eliminar_conductor, name='eliminar_conductor'),
+
+
+
     # ====================================
     # RUTAS PRINCIPALES
     # ====================================

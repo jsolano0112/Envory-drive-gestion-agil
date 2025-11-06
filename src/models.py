@@ -1,6 +1,30 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+from django.conf import settings
+
+class Conductor(models.Model):
+    ESTADO_CHOICES = (
+        ('ACTIVO', 'Activo'),
+        ('INACTIVO', 'Inactivo'),
+    )
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='perfil_conductor'
+    )
+    telefono = models.CharField(max_length=20)
+    licencia = models.CharField(max_length=50)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='ACTIVO')
+    fecha_ingreso = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} ({self.estado})"
+
+
+
+
 # ====================================
 # MODELO: COMPAÑÍA
 # ====================================
