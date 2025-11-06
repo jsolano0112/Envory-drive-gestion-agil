@@ -40,4 +40,25 @@ urlpatterns = [
     path('api/driver/<int:driver_id>/export-history/', driver_history_views.export_history, name='export_history'),
     path('api/driver/<int:driver_id>/statistics/', driver_history_views.driver_statistics_api, name='driver_statistics_api'),
     path('api/driver/autocomplete/', driver_history_views.driver_autocomplete_api, name='driver_autocomplete_api'),
+
+    # ====================================
+    # MÓDULO: DETALLE DE COMPAÑÍAS
+    # ====================================
+    # Vista de listado de compañías
+    path('companias/', views.companies_list, name='companies_list'),
+    # Vista principal del detalle de compañía
+    path('detalle-compania/<int:company_id>/', views.company_detail, name='company_detail'),
+    
+    # API Endpoints para búsqueda y detalle de compañías
+    path('api/companias/buscar/', views.company_search_api, name='company_search_api'),
+    path('api/companias/<int:company_id>/detalle/', views.company_detail_api, name='company_detail_api'),
+    path('api/companias/<int:company_id>/clientes/', views.company_clients_api, name='company_clients_api'),
+    
+    # API Endpoint para activar/desactivar clientes
+    path('api/clientes/<int:client_id>/toggle-status/', views.client_toggle_status_api, name='client_toggle_status_api'),
+    
+    # API Endpoints para generación de reportes
+    path('api/reportes/servicios/', views.generate_services_report_api, name='generate_services_report_api'),
+    path('api/reportes/ingresos/', views.generate_income_report_api, name='generate_income_report_api'),
+    path('api/reportes/novedades/', views.generate_issues_report_api, name='generate_issues_report_api'),
 ]
