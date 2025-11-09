@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction, IntegrityError
@@ -17,6 +18,28 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.shortcuts import render, get_object_or_404
 from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
+
+
+@login_required
+def conductores_todos(request):
+    """
+    Lista todos los conductores (sin filtros) y renderiza la plantilla.
+    """
+    # Ajusta select_related/prefetch_related según tus relaciones reales
+    conductores = Conductor.objects.select_related('user').all()
+    return render(request, 'conductores/listado_todos.html', {'conductores': conductores})
+
+@login_required
+def detalle_conductor(request, id):
+    """
+    Detalle simple de conductor. Mantener si lo necesitas en otras partes.
+    """
+    conductor = get_object_or_404(Conductor, id=id)
+    viajes = Viaje.objects.filter(conductor=conductor)
+    return render(request, 'conductores/detalle.html', {'conductor': conductor, 'viajes': viajes})
+
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -35,80 +58,7 @@ def login_view(request):
 
     return render(request, 'login.html')
 
-# 🟢 Lista de conductores activos
-def conductores_activos(request):
-    """
-    Muestra todos los conductores con estado 'Activo' y activo=True.
-    Se usa __iexact para evitar errores por mayúsculas/minúsculas.
-    """
-    conductores = Conductor.objects.filter(estado__iexact='activo', activo=True).select_related('user')
-    return render(request, 'conductores/activos.html', {'conductores': conductores})
 
-
-# 🔴 Lista de conductores inactivos
-def conductores_inactivos(request):
-    conductores = Conductor.objects.filter(activo=False, estado__iexact='inactivo').select_related('user')
-    return render(request, 'conductores/activos.html', {'conductores': conductores})
-# 🟡 Lista de todos los conductores (activos e inactivos)
-def conductores_todos(request):
-    """
-    Muestra todos los conductores sin filtrar por estado ni activo.
-    Útil para vistas administrativas o reportes generales.
-    """
-    conductores = Conductor.objects.select_related('user')
-    return render(request, 'conductores/activos.html', {'conductores': conductores})
-
-# 📋 Detalle de un conductor específico
-def detalle_conductor(request, id):
-    """
-    Muestra los datos completos de un conductor y sus viajes asociados.
-    """
-    conductor = get_object_or_404(Conductor, id=id)
-    viajes = Viaje.objects.filter(conductor=conductor)
-    return render(request, 'conductores/detalle.html', {
-        'conductor': conductor,
-        'viajes': viajes
-    })
-
-
-# ✅ Activar conductor
-def activar_conductor(request, id):
-    """
-    Cambia el estado del conductor a 'Activo' y lo marca como activo=True.
-    Solo responde a solicitudes POST.
-    """
-    conductor = get_object_or_404(Conductor, id=id)
-    if request.method == 'POST':
-        conductor.estado = 'Activo'
-        conductor.activo = True
-        conductor.save()
-    return redirect('detalle_conductor', id=id)
-
-
-# ❌ Desactivar conductor
-def desactivar_conductor(request, id):
-    """
-    Cambia el estado del conductor a 'Inactivo' y lo marca como activo=False.
-    Solo responde a solicitudes POST.
-    """
-    conductor = get_object_or_404(Conductor, id=id)
-    if request.method == 'POST':
-        conductor.estado = 'Inactivo'
-        conductor.activo = False
-        conductor.save()
-    return redirect('detalle_conductor', id=id)
-
-
-# 🗑️ Eliminar conductor
-def eliminar_conductor(request, id):
-    """
-    Elimina completamente el conductor de la base de datos.
-    Solo responde a solicitudes POST.
-    """
-    conductor = get_object_or_404(Conductor, id=id)
-    if request.method == 'POST':
-        conductor.delete()
-    return redirect('conductores_activos')
 # ====================================
 # VISTAS EXISTENTES
 # ====================================
