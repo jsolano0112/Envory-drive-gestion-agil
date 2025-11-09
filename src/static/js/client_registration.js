@@ -393,22 +393,20 @@ async function submitForm(event) {
         if (result.success) {
             showMessage(result.message, 'success');
             
-            // Limpiar formulario
-            form.reset();
-            clearAllErrors();
-            
-            // Redirigir al login después de 2 segundos
+            // Redirigir al home después de 1.5 segundos
             setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
+                window.location.href = '/home/';
+            }, 1500);
         } else {
             showMessage(result.message, 'error');
+            // Rehabilitar botón solo si hay error
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Registrar Cliente';
         }
     } catch (error) {
         console.error('Error al enviar formulario:', error);
         showMessage('Error de conexión. Por favor intente nuevamente.', 'error');
-    } finally {
-        // Rehabilitar botón
+        // Rehabilitar botón solo si hay error
         submitBtn.disabled = false;
         submitBtn.textContent = 'Registrar Cliente';
     }
