@@ -37,6 +37,7 @@ Bienvenido a EVORY DRIVE
             <p class="text-sm text-green-100 mt-1">Ver detalles, clientes y reportes de compañías</p>
         </a>
 
+<<<<<<< HEAD
         <!-- Registro de Conductores -->
         <a href="{% url 'driver_registration' %}"
            class="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
@@ -61,6 +62,24 @@ Bienvenido a EVORY DRIVE
             <p class="text-sm text-teal-100 mt-1">Ver todos los conductores actualmente activos en el sistema</p>
         </a>
     </div>
+=======
+    <!-- Detalle de Conductores -->
+    <a href="{% url 'driver_history' %}"
+       class="block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <i class="fas fa-id-card text-2xl mb-2"></i>
+        <h3 class="text-lg font-bold">Detalle de Conductores</h3>
+        <p class="text-sm text-orange-100 mt-1">Ver historial, viajes y estadísticas de conductores</p>
+    </a>
+
+    <!-- Lista de Conductores Activos -->
+    <a href="{% url 'conductores_activos' %}"
+       class="block bg-teal-600 hover:bg-teal-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <i class="fas fa-users text-2xl mb-2"></i>
+        <h3 class="text-lg font-bold">Gestion Conductores</h3>
+        <p class="text-sm text-teal-100 mt-1">Ver todos los conductores actualmente activos en el sistema</p>
+    </a>
+  </div>
+>>>>>>> 28350f97fc5145ed3aa1052b6d9ceeb7857e1c4c
 </section>
 
 {% endblock %}

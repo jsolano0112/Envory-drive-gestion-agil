@@ -2,18 +2,31 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q, Avg, Count
-from datetime import datetime, date, timedelta
+from django.db.models import Q
+from datetime import datetime, timedelta
 import csv
 import io
 import random
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-from .models import Conductor, Vehiculo
+from .models import Conductor
 
+@login_required
+def detalle_conductor(request, id):
+    conductor = get_object_or_404(Conductor, pk=id)
+
+    # Preferir placa si existe, sino documento, sino nombre completo
+    if hasattr(conductor, 'vehiculo') and conductor.vehiculo and getattr(conductor.vehiculo, 'placa', ''):
+        search_value = conductor.vehiculo.placa
+    else:
+        search_value = conductor.numero_documento or f"{conductor.user.first_name} {conductor.user.last_name}"
+
+    url = reverse('driver_history')   # debe ser name='driver_history' en urls.py
+    return redirect(f"{url}?search={search_value}")
 
 @login_required
 def driver_history(request):
