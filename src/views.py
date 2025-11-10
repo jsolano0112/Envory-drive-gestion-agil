@@ -18,8 +18,10 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
+from .decorators import admin_required, cliente_required, conductor_required, get_user_type
 
 
+@admin_required
 @login_required
 def conductores_todos(request):
     """
@@ -29,6 +31,7 @@ def conductores_todos(request):
     conductores = Conductor.objects.select_related('user').all()
     return render(request, 'conductores/listado_todos.html', {'conductores': conductores})
 
+@admin_required
 @login_required
 def detalle_conductor(request, id):
     """
@@ -64,7 +67,8 @@ def login_view(request):
 # ====================================
 @login_required
 def home_view(request):
-    return render(request, 'home.html')
+    user_type = get_user_type(request.user)
+    return render(request, 'home.html', {'user_type': user_type})
 
 def logout_view(request):
     logout(request)
@@ -99,6 +103,7 @@ def driver_registration(request):
 # MÓDULO: REGISTRO DE CLIENTES
 # ====================================
 
+@admin_required
 @login_required
 def client_registration(request):
     """
@@ -108,6 +113,7 @@ def client_registration(request):
     return render(request, 'client_registration.html')
 
 
+@admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def client_registration_api(request):
@@ -322,6 +328,7 @@ def client_registration_api(request):
         }, status=500)
 
 
+@admin_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def client_list_api(request):
@@ -399,6 +406,7 @@ def client_list_api(request):
         }, status=500)
 
 
+@admin_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def companies_list_api(request):

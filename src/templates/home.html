@@ -11,6 +11,16 @@ Bienvenido a EVORY DRIVE
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+  {% for message in messages %}
+    {% if message.tags == 'error' %}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ message }}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
 <!-- Mensaje de bienvenida -->
 <section class="mb-8">
     <p class="text-lg text-gray-700">
@@ -21,6 +31,9 @@ Bienvenido a EVORY DRIVE
 <!-- Botones de acceso a módulos -->
 <section class="mt-6">
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+    
+    <!-- Módulos para administradores (usuarios que NO son clientes ni conductores) -->
+    {% if user_type == 'admin' %}
     
     <!-- Registro de Clientes -->
     <article>
@@ -69,10 +82,37 @@ Bienvenido a EVORY DRIVE
         <p class="text-sm text-teal-100">Ver todos los conductores actualmente activos en el sistema</p>
       </a>
     </article>
+    
+    {% endif %}
+    
+    <!-- Módulos para clientes -->
+    {% if user_type == 'cliente' %}
+    <article>
+      <a href="#" aria-label="Solicitar viaje"
+         class="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-car text-2xl"></i>
+          <h3 class="text-lg font-bold">Solicitar Viaje</h3>
+        </div>
+        <p class="text-sm text-purple-100">Solicitar un nuevo viaje</p>
+      </a>
+    </article>
+    {% endif %}
+    
+    <!-- Módulos para conductores -->
+    {% if user_type == 'conductor' %}
+    <article>
+      <a href="#" aria-label="Viajes disponibles"
+         class="block bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-map-marked-alt text-2xl"></i>
+          <h3 class="text-lg font-bold">Viajes Disponibles</h3>
+        </div>
+        <p class="text-sm text-yellow-100">Ver viajes disponibles para aceptar</p>
+      </a>
+    </article>
+    {% endif %}
 
   </div>
 </section>
-
-
-
 {% endblock %}
