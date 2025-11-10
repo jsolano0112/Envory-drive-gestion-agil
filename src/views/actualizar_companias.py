@@ -15,7 +15,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'evory_drive.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from src.models import Compania, Cliente, Conductor, Viaje, Novedad
+from src.models.models import Compania, Cliente, Conductor, Viaje, Novedad
 
 def actualizar_companias():
     """Actualizar compañías existentes con datos completos"""
@@ -133,74 +133,6 @@ def actualizar_clientes_con_cargo():
     print(f"\nTotal clientes actualizados: {clientes.count()}")
 
 
-def crear_viajes_prueba():
-    """Crear viajes de prueba para las compañías"""
-    print("\n=== CREANDO VIAJES DE PRUEBA ===")
-    
-    clientes = Cliente.objects.filter(activo=True)
-    conductores = Conductor.objects.filter(activo=True)
-    
-    if clientes.count() == 0 or conductores.count() == 0:
-        print("No hay clientes o conductores activos. Saltando creación de viajes.")
-        return
-    
-    origenes = [
-        "Aeropuerto José María Córdova",
-        "Centro Comercial Santa Fe",
-        "Parque Lleras",
-        "Terminal del Sur",
-        "Universidad de Antioquia"
-    ]
-    
-    destinos = [
-        "Centro Empresarial Los Molinos",
-        "Clínica Las Américas",
-        "Hotel Dann Carlton",
-        "Edificio Coltejer",
-        "Plaza Mayor"
-    ]
-    
-    estados = ['Completado', 'En Progreso', 'Cancelado']
-    
-    # Crear entre 5 y 15 viajes por cliente
-    viajes_creados = 0
-    for cliente in clientes[:5]:  # Solo los primeros 5 clientes
-        num_viajes = random.randint(5, 15)
-        
-        for _ in range(num_viajes):
-            conductor = random.choice(conductores)
-            estado = random.choice(estados)
-            
-            # Fecha aleatoria en los últimos 90 días
-            dias_atras = random.randint(0, 90)
-            fecha_solicitud = datetime.now() - timedelta(days=dias_atras, hours=random.randint(0, 23))
-            
-            viaje_data = {
-                'cliente': cliente,
-                'conductor': conductor,
-                'fecha_solicitud': fecha_solicitud,
-                'estado': estado,
-                'origen': random.choice(origenes),
-                'destino': random.choice(destinos),
-                'valor_base': random.uniform(15000, 50000),
-                'valor_adicional': random.uniform(0, 10000),
-                'descuento': 0,
-                'metodo_pago': random.choice(['Efectivo', 'Tarjeta', 'App'])
-            }
-            
-            viaje_data['valor_total'] = viaje_data['valor_base'] + viaje_data['valor_adicional'] - viaje_data['descuento']
-            
-            if estado == 'Completado':
-                viaje_data['fecha_inicio'] = fecha_solicitud + timedelta(minutes=random.randint(5, 30))
-                viaje_data['fecha_fin'] = viaje_data['fecha_inicio'] + timedelta(minutes=random.randint(15, 60))
-                viaje_data['calificacion_cliente'] = random.uniform(3.5, 5.0)
-            
-            Viaje.objects.create(**viaje_data)
-            viajes_creados += 1
-    
-    print(f"Total viajes creados: {viajes_creados}")
-
-
 def crear_novedades_prueba():
     """Crear novedades de prueba"""
     print("\n=== CREANDO NOVEDADES DE PRUEBA ===")
@@ -277,10 +209,12 @@ def main():
     print("\n" + "="*50)
     print("  ACTUALIZACION DE DATOS - MODULO DETALLE COMPANIAS")
     print("="*50)
+    print("\nEste script actualiza información de compañías y clientes existentes.")
+    print("Para crear conductores y viajes, ejecuta: python crear_datos_prueba.py")
+    print("="*50 + "\n")
     
     actualizar_companias()
     actualizar_clientes_con_cargo()
-    crear_viajes_prueba()
     crear_novedades_prueba()
     
     print("\n" + "="*50)
@@ -294,6 +228,8 @@ def main():
     print(f"Conductores: {Conductor.objects.count()}")
     print(f"Viajes: {Viaje.objects.count()}")
     print(f"Novedades: {Novedad.objects.count()}")
+    print("\n")
+    print("NOTA: Si no hay viajes, ejecuta: python crear_datos_prueba.py")
     print("\n")
 
 

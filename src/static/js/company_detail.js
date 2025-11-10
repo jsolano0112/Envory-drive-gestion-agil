@@ -57,8 +57,7 @@ function setupEventListeners() {
     document.getElementById('fecha-inicio').addEventListener('change', validateReportForm);
     document.getElementById('fecha-fin').addEventListener('change', validateReportForm);
     
-    // Botones de reportes
-    document.getElementById('btn-generate-report').addEventListener('click', generateReport);
+    // Botón de exportar a Excel
     document.getElementById('btn-export-excel').addEventListener('click', exportToExcel);
 }
 
@@ -176,8 +175,6 @@ function updateMetrics(metrics) {
     } else {
         porcentajeElement.innerHTML = `<span class="text-red-500"><i class="fas fa-arrow-down"></i> ${Math.abs(porcentaje)}%</span> vs mes anterior`;
     }
-    
-    document.getElementById('metric-reportes').textContent = metrics.reportes_activos;
 }
 
 // ====================================
@@ -411,149 +408,18 @@ function validateReportForm() {
     
     const isValid = reportType && fechaInicio && fechaFin;
     
-    document.getElementById('btn-generate-report').disabled = !isValid;
     document.getElementById('btn-export-excel').disabled = !isValid;
     
     // Validar que fecha fin sea mayor a fecha inicio
     if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
         showNotification('La fecha de fin debe ser posterior a la fecha de inicio', 'warning');
-        document.getElementById('btn-generate-report').disabled = true;
         document.getElementById('btn-export-excel').disabled = true;
     }
 }
 
-async function generateReport() {
-    const reportType = document.getElementById('report-type').value;
-    const fechaInicio = document.getElementById('fecha-inicio').value;
-    const fechaFin = document.getElementById('fecha-fin').value;
-    
-    const endpoints = {
-        'servicios': '/api/reportes/servicios/',
-        'ingresos': '/api/reportes/ingresos/',
-        'novedades': '/api/reportes/novedades/'
-    };
-    
-    try {
-        showNotification('Generando reporte...', 'info');
-        
-        const response = await fetch(endpoints[reportType], {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                company_id: currentCompanyId,
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin,
-                export: false
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            displayReportResult(reportType, data);
-            showNotification(`Reporte generado: ${data.count} registros encontrados`, 'success');
-        } else {
-            showNotification(data.message, 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error al generar el reporte', 'error');
-    }
-}
-
-function displayReportResult(reportType, data) {
-    const resultDiv = document.getElementById('report-result');
-    const tableContainer = document.getElementById('report-table-container');
-    const countSpan = document.getElementById('report-count');
-    
-    countSpan.textContent = `${data.count} registros`;
-    
-    if (data.count === 0) {
-        tableContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No se encontraron registros para el rango de fechas seleccionado</p>';
-        resultDiv.classList.remove('hidden');
-        return;
-    }
-    
-    let table = '<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
-    
-    // Definir columnas según tipo de reporte
-    let columns = [];
-    if (reportType === 'servicios') {
-        columns = ['ID Cliente', 'Nombre Cliente', 'Empresa', 'ID Empresa', 'Fecha', 'ID Conductor', 'Conductor', 'Origen', 'Destino', 'Estado'];
-    } else if (reportType === 'ingresos') {
-        columns = ['ID Viaje', 'Fecha', 'ID Empresa', 'Empresa', 'Monto', 'Método Pago', 'Origen', 'Destino'];
-    } else if (reportType === 'novedades') {
-        columns = ['ID', 'Fecha', 'Tipo', 'Descripción', 'Estado', 'Prioridad', 'Creado Por'];
-    }
-    
-    columns.forEach(col => {
-        table += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${col}</th>`;
-    });
-    
-    table += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
-    
-    // Agregar filas
-    data.data.forEach(row => {
-        table += '<tr class="hover:bg-gray-50">';
-        
-        if (reportType === 'servicios') {
-            table += `
-                <td class="px-4 py-3 text-sm">${row.id_cliente}</td>
-                <td class="px-4 py-3 text-sm">${row.nombre_cliente}</td>
-                <td class="px-4 py-3 text-sm">${row.nombre_empresa}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-blue-600">${row.id_empresa}</td>
-                <td class="px-4 py-3 text-sm">${row.fecha}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-purple-600">${row.id_conductor}</td>
-                <td class="px-4 py-3 text-sm">${row.nombre_conductor}</td>
-                <td class="px-4 py-3 text-sm">${row.origen}</td>
-                <td class="px-4 py-3 text-sm">${row.destino}</td>
-                <td class="px-4 py-3 text-sm"><span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">${row.estado}</span></td>
-            `;
-        } else if (reportType === 'ingresos') {
-            table += `
-                <td class="px-4 py-3 text-sm">${row.id_viaje}</td>
-                <td class="px-4 py-3 text-sm">${row.fecha}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-blue-600">${row.id_empresa}</td>
-                <td class="px-4 py-3 text-sm">${row.nombre_empresa}</td>
-                <td class="px-4 py-3 text-sm font-semibold text-green-600">$${row.monto.toLocaleString()}</td>
-                <td class="px-4 py-3 text-sm">${row.metodo_pago}</td>
-                <td class="px-4 py-3 text-sm">${row.origen}</td>
-                <td class="px-4 py-3 text-sm">${row.destino}</td>
-            `;
-        } else if (reportType === 'novedades') {
-            table += `
-                <td class="px-4 py-3 text-sm">${row.id_novedad}</td>
-                <td class="px-4 py-3 text-sm">${row.fecha_creacion}</td>
-                <td class="px-4 py-3 text-sm">${row.tipo_novedad}</td>
-                <td class="px-4 py-3 text-sm max-w-xs truncate" title="${row.descripcion}">${row.descripcion}</td>
-                <td class="px-4 py-3 text-sm"><span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">${row.estado}</span></td>
-                <td class="px-4 py-3 text-sm"><span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">${row.prioridad}</span></td>
-                <td class="px-4 py-3 text-sm">${row.creado_por}</td>
-            `;
-        }
-        
-        table += '</tr>';
-    });
-    
-    // Agregar fila de total para ingresos
-    if (reportType === 'ingresos' && data.total_ingresos) {
-        table += `
-            <tr class="bg-gray-100 font-bold">
-                <td colspan="3" class="px-4 py-3 text-sm text-right">TOTAL INGRESOS:</td>
-                <td class="px-4 py-3 text-sm text-green-600">$${data.total_ingresos.toLocaleString()}</td>
-                <td colspan="3"></td>
-            </tr>
-        `;
-    }
-    
-    table += '</tbody></table>';
-    
-    tableContainer.innerHTML = table;
-    resultDiv.classList.remove('hidden');
-}
-
+// ====================================
+// EXPORTAR REPORTE A EXCEL
+// ====================================
 async function exportToExcel() {
     const reportType = document.getElementById('report-type').value;
     const fechaInicio = document.getElementById('fecha-inicio').value;

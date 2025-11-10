@@ -2,19 +2,34 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.db.models import Q, Avg, Count
-from datetime import datetime, date, timedelta
+from django.db.models import Q
+from datetime import datetime, timedelta
 import csv
 import io
 import random
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from ..utils.decorators import admin_required, cliente_required, conductor_required, get_user_type
 
-from .models import Conductor, Vehiculo
+from ..models.models import Conductor
 
+@login_required
+def detalle_conductor(request, id):
+    conductor = get_object_or_404(Conductor, pk=id)
 
+    # Preferir placa si existe, sino documento, sino nombre completo
+    if hasattr(conductor, 'vehiculo') and conductor.vehiculo and getattr(conductor.vehiculo, 'placa', ''):
+        search_value = conductor.vehiculo.placa
+    else:
+        search_value = conductor.numero_documento or f"{conductor.user.first_name} {conductor.user.last_name}"
+
+    url = reverse('driver_history')   # debe ser name='driver_history' en urls.py
+    return redirect(f"{url}?search={search_value}")
+
+@admin_required
 @login_required
 def driver_history(request):
     """Vista principal del historial de conductor"""
@@ -91,7 +106,7 @@ def driver_history(request):
 
             # ========== OBTENER HISTORIAL DE ESTADOS ==========
             try:
-                from .models import HistorialEstadoConductor
+                from ..models.models import HistorialEstadoConductor
                 status_history = []
                 
                 # Obtener los últimos 20 cambios de estado
@@ -194,9 +209,9 @@ def driver_history(request):
                 'date_end': date_end
             })
     
-    return render(request, 'driver_details.html', context)
+    return render(request, 'conductores/driver_details.html', context)
 
-
+@admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def update_driver_status(request, driver_id):
@@ -221,7 +236,7 @@ def update_driver_status(request, driver_id):
         
         # Registrar el cambio en el historial
         try:
-            from .models import HistorialEstadoConductor
+            from ..models.models import HistorialEstadoConductor
             
             HistorialEstadoConductor.objects.create(
                 conductor=driver,
@@ -243,7 +258,7 @@ def update_driver_status(request, driver_id):
             'message': f'Error al actualizar estado: {str(e)}'
         }, status=500)
 
-
+@admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def generate_report(request, driver_id):
@@ -409,7 +424,7 @@ def generate_report(request, driver_id):
             'message': f'Error al generar reporte: {str(e)}'
         }, status=500)
 
-
+@admin_required
 def export_history(request, driver_id):
     """Exporta el historial completo del conductor a CSV"""
     try:
@@ -441,7 +456,7 @@ def export_history(request, driver_id):
     except Exception as e:
         return HttpResponse(f'Error al exportar: {str(e)}', status=500)
 
-
+@admin_required
 @require_http_methods(["GET"])
 def driver_statistics_api(request, driver_id):
     """Endpoint API para obtener estadísticas del conductor"""
@@ -478,7 +493,7 @@ def driver_statistics_api(request, driver_id):
             'message': f'Error: {str(e)}'
         }, status=500)
 
-
+@admin_required
 @require_http_methods(["GET"])
 def driver_autocomplete_api(request):
     """API para autocompletado de conductores"""

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Compania, Cliente, Conductor, Novedad
+from .models.models import Compania, Cliente, Conductor, Novedad
 
 # ====================================
 # ADMIN: COMPAÑÍA

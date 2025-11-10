@@ -11,6 +11,16 @@ Bienvenido a EVORY DRIVE
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+  {% for message in messages %}
+    {% if message.tags == 'error' %}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ message }}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
 <!-- Mensaje de bienvenida -->
 <section class="mb-8">
     <p class="text-lg text-gray-700">
@@ -20,38 +30,89 @@ Bienvenido a EVORY DRIVE
 
 <!-- Botones de acceso a módulos -->
 <section class="mt-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Registro de Clientes -->
-        <a href="{% url 'client_registration' %}"
-           class="block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
-            <i class="fas fa-user-plus text-2xl mb-2"></i>
-            <h3 class="text-lg font-bold">Registro de Clientes</h3>
-            <p class="text-sm text-blue-100 mt-1">Registrar nuevos clientes en el sistema</p>
-        </a>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+    
+    <!-- Módulos para administradores (usuarios que NO son clientes ni conductores) -->
+    {% if user_type == 'admin' %}
+    
+    <!-- Registro de Clientes -->
+    <article>
+      <a href="{% url 'client_registration' %}" aria-label="Registrar nuevos clientes"
+         class="block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-user-plus text-2xl"></i>
+          <h3 class="text-lg font-bold">Registro de Clientes</h3>
+        </div>
+        <p class="text-sm text-blue-100">Registrar nuevos clientes en el sistema</p>
+      </a>
+    </article>
 
-        <!-- Detalle de Compañías -->
-        <a href="{% url 'companies_list' %}"
-           class="block bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
-            <i class="fas fa-building text-2xl mb-2"></i>
-            <h3 class="text-lg font-bold">Gestión de Compañías</h3>
-            <p class="text-sm text-green-100 mt-1">Ver detalles, clientes y reportes de compañías</p>
-        </a>
+    <!-- Gestión de Compañías -->
+    <article>
+      <a href="{% url 'companies_list' %}" aria-label="Ver detalles de compañías"
+         class="block bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-building text-2xl"></i>
+          <h3 class="text-lg font-bold">Gestión de Compañías</h3>
+        </div>
+        <p class="text-sm text-green-100">Ver detalles, clientes y reportes de compañías</p>
+      </a>
+    </article>
 
-        <!-- Registro de Conductores -->
-        <a href="{% url 'driver_registration' %}"
-           class="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
-            <i class="fas fa-car text-2xl mb-2"></i>
-            <h3 class="text-lg font-bold">Registro de Conductores</h3>
-            <p class="text-sm text-purple-100 mt-1">Registrar nuevos conductores en el sistema</p>
-        </a>
+    <!-- Detalle de Conductores -->
+    <article>
+      <a href="{% url 'driver_history' %}" aria-label="Ver historial de conductores"
+         class="block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-id-card text-2xl"></i>
+          <h3 class="text-lg font-bold">Detalle de Conductores</h3>
+        </div>
+        <p class="text-sm text-orange-100">Ver historial, viajes y estadísticas de conductores</p>
+      </a>
+    </article>
 
-        <!-- Detalle de Conductores -->
-        <a href="{% url 'driver_history' %}"
-           class="block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
-            <i class="fas fa-id-card text-2xl mb-2"></i>
-            <h3 class="text-lg font-bold">Detalle de Conductores</h3>
-            <p class="text-sm text-orange-100 mt-1">Ver historial, viajes y estadísticas de conductores</p>
-        </a>
-    </div>
+    <!-- Gestión de Conductores -->
+    <article>
+      <a href="{% url 'conductores_activos' %}" aria-label="Ver conductores activos"
+         class="block bg-teal-600 hover:bg-teal-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-users text-2xl"></i>
+          <h3 class="text-lg font-bold">Gestión Conductores</h3>
+        </div>
+        <p class="text-sm text-teal-100">Ver todos los conductores actualmente activos en el sistema</p>
+      </a>
+    </article>
+    
+    {% endif %}
+    
+    <!-- Módulos para clientes -->
+    {% if user_type == 'cliente' %}
+    <article>
+      <a href="#" aria-label="Solicitar viaje"
+         class="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-car text-2xl"></i>
+          <h3 class="text-lg font-bold">Solicitar Viaje</h3>
+        </div>
+        <p class="text-sm text-purple-100">Solicitar un nuevo viaje</p>
+      </a>
+    </article>
+    {% endif %}
+    
+    <!-- Módulos para conductores -->
+    {% if user_type == 'conductor' %}
+    <article>
+      <a href="#" aria-label="Viajes disponibles"
+         class="block bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+        <div class="flex items-center space-x-3 mb-2">
+          <i class="fas fa-map-marked-alt text-2xl"></i>
+          <h3 class="text-lg font-bold">Viajes Disponibles</h3>
+        </div>
+        <p class="text-sm text-yellow-100">Ver viajes disponibles para aceptar</p>
+      </a>
+    </article>
+    {% endif %}
+
+  </div>
 </section>
 {% endblock %}

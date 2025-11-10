@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction, IntegrityError
@@ -14,9 +15,34 @@ from django.contrib.auth import logout
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
-from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
+from ..models.models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
+from ..utils.decorators import admin_required, cliente_required, conductor_required, get_user_type
+
+
+@admin_required
+@login_required
+def conductores_todos(request):
+    """
+    Lista todos los conductores (sin filtros) y renderiza la plantilla.
+    """
+    # Ajusta select_related/prefetch_related según tus relaciones reales
+    conductores = Conductor.objects.select_related('user').all()
+    return render(request, 'conductores/listado_todos.html', {'conductores': conductores})
+
+@admin_required
+@login_required
+def detalle_conductor(request, id):
+    """
+    Detalle simple de conductor. Mantener si lo necesitas en otras partes.
+    """
+    conductor = get_object_or_404(Conductor, id=id)
+    viajes = Viaje.objects.filter(conductor=conductor)
+    return render(request, 'conductores/detalle.html', {'conductor': conductor, 'viajes': viajes})
+
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -41,7 +67,8 @@ def login_view(request):
 # ====================================
 @login_required
 def home_view(request):
-    return render(request, 'home.html')
+    user_type = get_user_type(request.user)
+    return render(request, 'home.html', {'user_type': user_type})
 
 def logout_view(request):
     logout(request)
@@ -66,8 +93,9 @@ def inicio(request):
     
     return render(request, 'login.html')
 
+
 def driver_registration(request):
-    return render(request, 'driver_registration.html')
+    return render(request, 'conductores/driver_registration.html')
 
 
 
@@ -75,14 +103,17 @@ def driver_registration(request):
 # MÓDULO: REGISTRO DE CLIENTES
 # ====================================
 
+@admin_required
+@login_required
 def client_registration(request):
     """
     Vista que renderiza el formulario de registro de clientes.
     GET: Muestra el formulario
     """
-    return render(request, 'client_registration.html')
+    return render(request, 'clientes/client_registration.html')
 
 
+@admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def client_registration_api(request):
@@ -297,6 +328,7 @@ def client_registration_api(request):
         }, status=500)
 
 
+@admin_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def client_list_api(request):
@@ -380,6 +412,7 @@ def companies_list_api(request):
     """
     Endpoint GET para obtener lista de compañías activas.
     Usado para popular el select del formulario de registro.
+    Acceso público para permitir registro de clientes.
     """
     try:
         companias = Compania.objects.filter(estado=True).order_by('nombre')
@@ -859,15 +892,17 @@ def driver_list_api(request):
 # MÓDULO: DETALLE DE COMPAÑÍAS
 # ====================================
 
+@login_required
 def companies_list(request):
     """
     Vista que muestra el listado de todas las compañías.
     GET: Muestra la lista de compañías disponibles
     """
     companias = Compania.objects.filter(estado=True).order_by('nombre')
-    return render(request, 'companies_list.html', {'companias': companias})
+    return render(request, 'compañias/companies_list.html', {'companias': companias})
 
 
+@login_required
 def company_detail(request, company_id):
     """
     Vista que renderiza el módulo de detalle de compañía.
@@ -875,7 +910,7 @@ def company_detail(request, company_id):
     """
     try:
         compania = Compania.objects.get(id=company_id)
-        return render(request, 'company_detail.html', {'compania': compania})
+        return render(request, 'compañias/company_detail.html', {'compania': compania})
     except Compania.DoesNotExist:
         messages.error(request, 'La compañía no existe')
         return redirect('inicio')
@@ -974,12 +1009,6 @@ def company_detail_api(request, company_id):
         elif servicios_mes > 0:
             porcentaje_mes = 100
         
-        # Reportes activos (novedades pendientes o en revisión)
-        reportes_activos = Novedad.objects.filter(
-            compania=compania,
-            estado__in=['Pendiente', 'En Revisión']
-        ).count()
-        
         compania_data = {
             'id': compania.id,
             'nombre': compania.nombre,
@@ -997,8 +1026,7 @@ def company_detail_api(request, company_id):
                 'servicios_realizados': servicios_realizados,
                 'empleados_activos': clientes_activos,
                 'servicios_mes': servicios_mes,
-                'porcentaje_mes': round(porcentaje_mes, 1),
-                'reportes_activos': reportes_activos
+                'porcentaje_mes': round(porcentaje_mes, 1)
             }
         }
         
@@ -1562,3 +1590,15 @@ def generate_issues_report_api(request):
             'success': False,
             'message': f'Error al generar reporte: {str(e)}'
         }, status=500)
+
+
+def custom_404_view(request, exception):
+    from django.shortcuts import redirect
+    from django.http import HttpResponseNotFound
+
+    # No redireccionar archivos estáticos ni media
+    if request.path.startswith('/static/') or request.path.startswith('/media/'):
+        return HttpResponseNotFound('File not found')
+
+    return redirect('home')
+

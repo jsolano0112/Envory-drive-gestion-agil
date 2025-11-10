@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Listado de Conductores</h2>
+
+<table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+  <thead class="bg-gray-100 text-gray-700">
+    <tr>
+      <th class="px-4 py-2 text-left">#</th>
+      <th class="px-4 py-2 text-left">Nombre</th>
+      <th class="px-4 py-2 text-left">Placa</th>
+      <th class="px-4 py-2 text-left">Estado</th>
+      <th class="px-4 py-2 text-left">Fecha de Registro</th>
+      <th class="px-4 py-2 text-left">Acción</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for conductor in conductores %}
+    <tr class="border-b hover:bg-gray-50">
+      <td class="px-4 py-2">{{ forloop.counter }}</td>
+      <td class="px-4 py-2">{{ conductor.user.get_full_name }}</td>
+      <td class="px-4 py-2">
+        {% if conductor.vehiculo_asignado %}
+          {{ conductor.vehiculo_asignado.placa }}
+        {% else %}
+          <span class="italic text-gray-400">Sin vehículo</span>
+        {% endif %}
+      </td>
+      <td class="px-4 py-2">
+        <span class="font-semibold">{{ conductor.estado }}</span>
+      </td>
+      <td class="px-4 py-2">{{ conductor.fecha_registro|date:"d/m/Y" }}</td>
+      <td class="px-4 py-2">
+        {% if conductor.numero_documento %}
+          <a href="{% url 'driver_history' %}?search={{ conductor.numero_documento|urlencode }}" class="text-blue-600 hover:text-blue-800">Ver</a>
+        {% elif conductor.vehiculo_asignado and conductor.vehiculo_asignado.placa %}
+          <a href="{% url 'driver_history' %}?search={{ conductor.vehiculo_asignado.placa|urlencode }}" class="text-blue-600 hover:text-blue-800">Ver</a>
+        {% else %}
+          <a href="{% url 'driver_history' %}?search={{ conductor.id }}" class="text-blue-600 hover:text-blue-800">Ver</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="px-4 py-2 text-center text-gray-500">No hay conductores registrados.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
