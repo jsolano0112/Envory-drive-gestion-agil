@@ -1590,3 +1590,9 @@ def generate_issues_report_api(request):
             'success': False,
             'message': f'Error al generar reporte: {str(e)}'
         }, status=500)
+
+
+def custom_404_view(request, exception):
+    from django.shortcuts import redirect
+    return redirect('home')
+
