@@ -420,7 +420,7 @@ form.addEventListener('submit', submitForm);
 
 cancelBtn.addEventListener('click', function() {
     if (confirm('¿Está seguro que desea cancelar el registro? Se perderán todos los datos ingresados.')) {
-        window.location.href = '/';
+        window.history.back();
     }
 });
 

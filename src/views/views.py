@@ -406,13 +406,13 @@ def client_list_api(request):
         }, status=500)
 
 
-@admin_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def companies_list_api(request):
     """
     Endpoint GET para obtener lista de compañías activas.
     Usado para popular el select del formulario de registro.
+    Acceso público para permitir registro de clientes.
     """
     try:
         companias = Compania.objects.filter(estado=True).order_by('nombre')
@@ -1594,5 +1594,11 @@ def generate_issues_report_api(request):
 
 def custom_404_view(request, exception):
     from django.shortcuts import redirect
+    from django.http import HttpResponseNotFound
+
+    # No redireccionar archivos estáticos ni media
+    if request.path.startswith('/static/') or request.path.startswith('/media/'):
+        return HttpResponseNotFound('File not found')
+
     return redirect('home')
 
