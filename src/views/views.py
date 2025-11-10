@@ -17,8 +17,8 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect, get_object_or_404
 
-from .models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
-from .decorators import admin_required, cliente_required, conductor_required, get_user_type
+from ..models.models import Cliente, Compania, Conductor, Vehiculo, DocumentoConductor, Viaje, Novedad
+from ..utils.decorators import admin_required, cliente_required, conductor_required, get_user_type
 
 
 @admin_required
@@ -93,9 +93,9 @@ def inicio(request):
     
     return render(request, 'login.html')
 
-@login_required
+
 def driver_registration(request):
-    return render(request, 'driver_registration.html')
+    return render(request, 'conductores/driver_registration.html')
 
 
 
@@ -110,7 +110,7 @@ def client_registration(request):
     Vista que renderiza el formulario de registro de clientes.
     GET: Muestra el formulario
     """
-    return render(request, 'client_registration.html')
+    return render(request, 'clientes/client_registration.html')
 
 
 @admin_required
@@ -899,7 +899,7 @@ def companies_list(request):
     GET: Muestra la lista de compañías disponibles
     """
     companias = Compania.objects.filter(estado=True).order_by('nombre')
-    return render(request, 'companies_list.html', {'companias': companias})
+    return render(request, 'compañias/companies_list.html', {'companias': companias})
 
 
 @login_required
@@ -910,7 +910,7 @@ def company_detail(request, company_id):
     """
     try:
         compania = Compania.objects.get(id=company_id)
-        return render(request, 'company_detail.html', {'compania': compania})
+        return render(request, 'compañias/company_detail.html', {'compania': compania})
     except Compania.DoesNotExist:
         messages.error(request, 'La compañía no existe')
         return redirect('inicio')

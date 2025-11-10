@@ -10,7 +10,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'evory_drive.settings')
 django.setup()
 
-from src.models import Compania, Cliente
+from src.models.models import Compania, Cliente
 from django.contrib.auth.models import User
 
 def crear_companias():
@@ -91,7 +91,7 @@ def crear_cliente_prueba():
 def crear_conductores_prueba():
     """Crea conductores de prueba si no existen"""
     print("\nCreando conductores de prueba...")
-    from src.models import Conductor, Vehiculo
+    from src.models.models import Conductor, Vehiculo
     from datetime import date, timedelta
     
     if Conductor.objects.filter(activo=True).count() >= 3:
@@ -176,7 +176,7 @@ def crear_conductores_prueba():
 def crear_viajes_para_clientes():
     """Crea viajes de prueba para todos los clientes"""
     print("\nCreando viajes para clientes...")
-    from src.models import Conductor, Viaje
+    from src.models.models import Conductor, Viaje
     from datetime import datetime, timedelta
     import random
     
@@ -275,7 +275,7 @@ def main():
         print("\nRESUMEN:")
         print(f"   Compañías activas: {Compania.objects.filter(estado=True).count()}")
         print(f"   Clientes registrados: {Cliente.objects.count()}")
-        from src.models import Conductor, Viaje
+        from src.models.models import Conductor, Viaje
         print(f"   Conductores activos: {Conductor.objects.filter(activo=True).count()}")
         print(f"   Viajes totales: {Viaje.objects.count()}")
         print("\nSiguiente paso:")

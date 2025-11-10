@@ -15,7 +15,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'evory_drive.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from src.models import Compania, Cliente, Conductor, Viaje, Novedad
+from src.models.models import Compania, Cliente, Conductor, Viaje, Novedad
 
 def actualizar_companias():
     """Actualizar compañías existentes con datos completos"""

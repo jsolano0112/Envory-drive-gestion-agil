@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views
-from . import driver_history_views
+from .views import views
+from .views import driver_history_views
 
 urlpatterns = [
     
