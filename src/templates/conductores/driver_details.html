@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsContainer.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
         resultsContainer.classList.remove('hidden');
 
-        fetch(`/api/driver/autocomplete/?q=${encodeURIComponent(query)}`)
+        fetch(`/api/conductores/autocompletado/?q=${encodeURIComponent(query)}`)
             .then(response => {
                 if (!response.ok) throw new Error('Error en la búsqueda');
                 return response.json();
