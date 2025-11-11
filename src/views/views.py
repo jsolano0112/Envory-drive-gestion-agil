@@ -113,13 +113,13 @@ def client_registration(request):
     return render(request, 'clientes/client_registration.html')
 
 
-@admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def client_registration_api(request):
     """
     Endpoint POST para registrar nuevos clientes.
     Valida datos, verifica duplicados y crea el usuario + perfil de cliente.
+    Acceso público para permitir auto-registro de clientes.
     
     Respuesta JSON:
     - success: true/false

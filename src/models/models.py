@@ -306,7 +306,7 @@ class Conductor(models.Model):
     
     # Estados del conductor
     ESTADO_CHOICES = [
-        ('Pendiente de Verificación', 'Pendiente de Verificación'),
+        ('Pendiente', 'Pendiente'),
         ('En Corrección', 'En Corrección'),
         ('Activo', 'Activo'),
         ('Inactivo', 'Inactivo'),
@@ -315,7 +315,7 @@ class Conductor(models.Model):
         ('Rechazado', 'Rechazado'),
         ('Dado de Baja', 'Dado de Baja'),
     ]
-    
+
     estado = models.CharField(
         max_length=40,
         choices=ESTADO_CHOICES,
@@ -743,6 +743,7 @@ class HistorialEstadoConductor(models.Model):
         ('Correccion', 'Solicitud de corrección'),
         ('Aprobacion', 'Aprobación de documentos'),
         ('Activacion', 'Activación manual'),
+        ('Manual', 'Cambio manual'),
         ('Inactivacion', 'Inactivación voluntaria'),
         ('Suspension', 'Suspensión por incumplimiento'),
         ('Bloqueo', 'Bloqueo por infracciones graves'),
