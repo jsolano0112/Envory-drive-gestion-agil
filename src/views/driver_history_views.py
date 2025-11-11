@@ -117,10 +117,10 @@ def driver_history(request):
                 for cambio in historial_estados:
                     # Crear títulos descriptivos según los estados
                     titulos = {
-                        ('Pendiente de Verificación', 'En Corrección'): 'Documentos Pendientes de Corrección',
-                        ('En Corrección', 'Pendiente de Verificación'): 'Correcciones Enviadas',
-                        ('Pendiente de Verificación', 'Activo'): 'Conductor Aprobado y Activado',
-                        ('Pendiente de Verificación', 'Rechazado'): 'Conductor Rechazado',
+                        ('Pendiente', 'En Corrección'): 'Documentos Pendientes de Corrección',
+                        ('En Corrección', 'Pendiente'): 'Correcciones Enviadas',
+                        ('Pendiente', 'Activo'): 'Conductor Aprobado y Activado',
+                        ('Pendiente', 'Rechazado'): 'Conductor Rechazado',
                         ('Activo', 'Inactivo'): 'Conductor Desactivado',
                         ('Inactivo', 'Activo'): 'Conductor Reactivado',
                         ('Activo', 'Suspendido'): 'Conductor Suspendido',
@@ -148,20 +148,20 @@ def driver_history(request):
             except (ImportError, AttributeError):
                 # Si el modelo no existe aún, usar data mockeada como fallback
                 status_history = []
-                status_sequence = ['Pendiente de Verificación', 'Activo', 'Suspendido', 'Activo', 'Inactivo', 'Activo']
-                
+                status_sequence = ['Pendiente', 'Activo', 'Suspendido', 'Activo', 'Inactivo', 'Activo']
+
                 current_date = driver.fecha_registro
                 admins = ['Admin Sistema', 'María González', 'Carlos Rodríguez', 'Supervisor General']
-                
+
                 for i, new_status in enumerate(status_sequence):
                     if i == 0:
-                        prev_status = 'Pendiente de Verificación'
+                        prev_status = 'Pendiente'
                         title = 'Registro Inicial'
                         reason = 'Registro inicial del conductor en la plataforma'
                     else:
                         prev_status = status_sequence[i-1]
                         transitions = {
-                            ('Pendiente de Verificación', 'Activo'): ('Conductor Aprobado', 'Documentos verificados correctamente'),
+                            ('Pendiente', 'Activo'): ('Conductor Aprobado', 'Documentos verificados correctamente'),
                             ('Activo', 'Suspendido'): ('Conductor Suspendido', 'Queja de cliente por demora excesiva'),
                             ('Suspendido', 'Activo'): ('Suspensión Levantada', 'Cumplimiento de condiciones de reactivación'),
                             ('Activo', 'Inactivo'): ('Conductor Desactivado', 'Por decisión propia'),
