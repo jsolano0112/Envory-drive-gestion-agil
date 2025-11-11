@@ -19,23 +19,31 @@
       <td class="px-4 py-2">{{ forloop.counter }}</td>
       <td class="px-4 py-2">{{ conductor.user.get_full_name }}</td>
       <td class="px-4 py-2">
-        {% if conductor.vehiculo_asignado %}
-          {{ conductor.vehiculo_asignado.placa }}
+        {% if conductor.tiene_vehiculo_asignado %}
+          {{ conductor.get_placa }}
         {% else %}
           <span class="italic text-gray-400">Sin vehículo</span>
         {% endif %}
       </td>
       <td class="px-4 py-2">
-        <span class="font-semibold">{{ conductor.estado }}</span>
+        <span class="{% if conductor.estado == 'Activo' %}text-green-600{% elif conductor.estado == 'Pendiente' %}text-yellow-600{% else %}text-red-600{% endif %} font-semibold">
+          {{ conductor.estado }}
+        </span>
       </td>
       <td class="px-4 py-2">{{ conductor.fecha_registro|date:"d/m/Y" }}</td>
       <td class="px-4 py-2">
         {% if conductor.numero_documento %}
-          <a href="{% url 'driver_history' %}?search={{ conductor.numero_documento|urlencode }}" class="text-blue-600 hover:text-blue-800">Ver</a>
-        {% elif conductor.vehiculo_asignado and conductor.vehiculo_asignado.placa %}
-          <a href="{% url 'driver_history' %}?search={{ conductor.vehiculo_asignado.placa|urlencode }}" class="text-blue-600 hover:text-blue-800">Ver</a>
+          <a href="{% url 'driver_history' %}?search={{ conductor.numero_documento|urlencode }}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-eye"></i> Ver
+          </a>
+        {% elif conductor.tiene_vehiculo_asignado %}
+          <a href="{% url 'driver_history' %}?search={{ conductor.get_placa|urlencode }}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-eye"></i> Ver
+          </a>
         {% else %}
-          <a href="{% url 'driver_history' %}?search={{ conductor.id }}" class="text-blue-600 hover:text-blue-800">Ver</a>
+          <a href="{% url 'driver_history' %}?search={{ conductor.id }}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-eye"></i> Ver
+          </a>
         {% endif %}
       </td>
     </tr>

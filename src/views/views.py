@@ -27,8 +27,8 @@ def conductores_todos(request):
     """
     Lista todos los conductores (sin filtros) y renderiza la plantilla.
     """
-    # Ajusta select_related/prefetch_related según tus relaciones reales
-    conductores = Conductor.objects.select_related('user').all()
+    #  Agrega 'vehiculo' al select_related para optimizar la consulta
+    conductores = Conductor.objects.select_related('user', 'vehiculo').all()
     return render(request, 'conductores/listado_todos.html', {'conductores': conductores})
 
 @admin_required
@@ -37,8 +37,8 @@ def detalle_conductor(request, id):
     """
     Detalle simple de conductor. Mantener si lo necesitas en otras partes.
     """
-    conductor = get_object_or_404(Conductor, id=id)
-    viajes = Viaje.objects.filter(conductor=conductor)
+    conductor = get_object_or_404(Conductor.objects.select_related('user', 'vehiculo'), id=id)
+    viajes = Viaje.objects.filter(conductor=conductor).select_related('cliente', 'destino')
     return render(request, 'conductores/detalle.html', {'conductor': conductor, 'viajes': viajes})
 
 

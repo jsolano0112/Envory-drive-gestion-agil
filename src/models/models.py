@@ -362,6 +362,28 @@ class Conductor(models.Model):
         from datetime import date
         today = date.today()
         return today.year - self.fecha_nacimiento.year - ((today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
+    
+    def get_placa(self):
+        """Retorna la placa del vehículo o None si no tiene."""
+        try:
+            return self.vehiculo.placa
+        except Vehiculo.DoesNotExist:
+            return None
+    
+    def tiene_vehiculo_asignado(self):
+        """Verifica si tiene un vehículo asignado sin lanzar excepción."""
+        try:
+            return self.vehiculo is not None
+        except Vehiculo.DoesNotExist:
+            return False
+    
+    def get_vehiculo_info(self):
+        """Retorna información completa del vehículo o None."""
+        try:
+            return self.vehiculo
+        except Vehiculo.DoesNotExist:
+            return None
+
 
 
 # ====================================
@@ -437,7 +459,8 @@ class Vehiculo(models.Model):
     
     def __str__(self):
         return f"{self.marca} {self.modelo} - {self.placa}"
-
+    
+    
 
 # ====================================
 # MODELO: DOCUMENTO CONDUCTOR
