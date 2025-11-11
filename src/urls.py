@@ -32,21 +32,18 @@ urlpatterns = [
     # MÓDULO: REGISTRO DE CONDUCTORES
     # ====================================
     path('registro-conductores/', views.driver_registration, name='driver_registration'),
-    path('driver-registration/', views.driver_registration, name='driver_registration'),
-    path('api/conductores/registro/', views.driver_registration_api, name='driver_registration_api'),
     path('api/conductores/', views.driver_list_api, name='driver_list_api'),
-    path('api/driver-registration/', views.driver_registration_api, name='driver_registration_api'),
-    path('api/drivers/', views.driver_list_api, name='driver_list_api'),
+    path('api/conductores/registro/', views.driver_registration_api, name='driver_registration_api'),
 
     # ====================================
     # MÓDULO: HISTORIAL DE CONDUCTORES
     # ====================================
     path('detalle-conductor/', driver_history_views.driver_history, name='driver_history'),
-    path('api/driver/<int:driver_id>/update-status/', driver_history_views.update_driver_status, name='update_driver_status'),
-    path('api/driver/<int:driver_id>/generate-report/', driver_history_views.generate_report, name='generate_report'),
-    path('api/driver/<int:driver_id>/export-history/', driver_history_views.export_history, name='export_history'),
-    path('api/driver/<int:driver_id>/statistics/', driver_history_views.driver_statistics_api, name='driver_statistics_api'),
-    path('api/driver/autocomplete/', driver_history_views.driver_autocomplete_api, name='driver_autocomplete_api'),
+    path('api/conductores/<int:driver_id>/update-status/', driver_history_views.update_driver_status, name='update_driver_status'),
+    path('api/conductores/<int:driver_id>/generate-report/', driver_history_views.generate_report, name='generate_report'),
+    path('api/conductores/<int:driver_id>/export-history/', driver_history_views.export_history, name='export_history'),
+    path('api/conductores/<int:driver_id>/statistics/', driver_history_views.driver_statistics_api, name='driver_statistics_api'),
+    path('api/conductores/autocompletado/', driver_history_views.driver_autocomplete_api, name='driver_autocomplete_api'),
 
     # ====================================
     # MÓDULO: DETALLE DE COMPAÑÍAS
