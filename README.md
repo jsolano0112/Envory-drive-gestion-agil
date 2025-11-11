@@ -2,7 +2,8 @@
 
 ## Descripción del Proyecto
 
-**Evory Drive** es un sistema de gestión ágil desarrollado con **Django** (Backend) y un **Frontend** (usando Node.js para dependencias). Su objetivo es optimizar la administración de conductores y clientes a través de formularios dedicados y un panel de administración central.
+Evory Drive es una plataforma web que permiten a los clientes, asignados por compañías asociadas, solicitar servicios de transporte personalizados tanto para traslados puntuales como para servicios de varios días.
+
 
 ---
 
