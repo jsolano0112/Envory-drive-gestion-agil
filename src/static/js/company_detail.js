@@ -320,11 +320,15 @@ function createClientCard(cliente) {
 // ACTIVAR/DESACTIVAR CLIENTE
 // ====================================
 async function toggleClientStatus(clientId, newStatus) {
+    const action = newStatus ? 'activar' : 'desactivar';
     try {
+        const csrfToken = getCsrfToken();
+        
         const response = await fetch(`/api/clientes/${clientId}/toggle-status/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({ activo: newStatus })
         });
@@ -332,10 +336,10 @@ async function toggleClientStatus(clientId, newStatus) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification(data.message, 'success');
-            loadClients(); // Recargar la lista
+            showNotification(data.message || 'Estado actualizado correctamente', 'success');
+            updateClientCardUI(clientId, newStatus);
         } else {
-            showNotification(data.message, 'error');
+            showNotification(data.message || 'Error al actualizar estado', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -343,6 +347,53 @@ async function toggleClientStatus(clientId, newStatus) {
     }
 }
 
+function updateClientCardUI(clientId, newStatus) {
+    const container = document.getElementById('clientes-container');
+    const cards = container.querySelectorAll('.border-l-4');
+    
+    cards.forEach(card => {
+        const button = card.querySelector('button[onclick*="' + clientId + '"]');
+        if (button) {
+            // Actualizar círculo de estado
+            const statusDot = card.querySelector('.w-3.h-3');
+            if (statusDot) {
+                statusDot.className = `w-3 h-3 rounded-full ${newStatus ? 'bg-green-500' : 'bg-red-500'}`;
+            }
+            
+            // Actualizar badge
+            const statusBadge = card.querySelector('.px-3.py-1.text-xs');
+            if (statusBadge) {
+                const statusClass = newStatus ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                const statusText = newStatus ? 'Activo' : 'Inactivo';
+                statusBadge.className = `px-3 py-1 text-xs font-semibold rounded-full ${statusClass}`;
+                statusBadge.textContent = statusText;
+            }
+            
+            // Actualizar botón
+            const buttonClass = newStatus ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600';
+            const buttonText = newStatus ? 'Desactivar' : 'Activar';
+            button.className = `${buttonClass} text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors`;
+            button.textContent = buttonText;
+            button.setAttribute('onclick', `toggleClientStatus(${clientId}, ${!newStatus})`);
+        }
+    });
+}
+
+function getCsrfToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) return metaTag.getAttribute('content');
+    
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
+    if (cookieValue) return cookieValue.split('=')[1];
+    
+    const csrfInput = document.querySelector('[name="csrfmiddlewaretoken"]');
+    if (csrfInput) return csrfInput.value;
+    
+    console.warn('No se pudo encontrar el CSRF token');
+    return '';
+}
 // ====================================
 // CARGAR DATOS DE LA EMPRESA
 // ====================================
@@ -472,34 +523,31 @@ async function exportToExcel() {
 // ====================================
 // NOTIFICACIONES
 // ====================================
-function showNotification(message, type) {
-    const notification = document.getElementById('notification');
-    const icon = document.getElementById('notification-icon');
-    const messageElement = document.getElementById('notification-message');
+function showNotification(message, type = 'success') {
+    let notification = document.getElementById('status-notification');
     
-    const icons = {
-        'success': 'fas fa-check-circle text-green-500',
-        'error': 'fas fa-times-circle text-red-500',
-        'warning': 'fas fa-exclamation-triangle text-yellow-500',
-        'info': 'fas fa-info-circle text-blue-500'
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'status-notification';
+        notification.className = 'fixed top-4 right-4 z-50 transition-all duration-300';
+        notification.style.transform = 'translateX(120%)';
+        document.body.appendChild(notification);
+    }
+    
+    const colors = {
+        success: { bg: 'bg-green-500', icon: '✓' },
+        error: { bg: 'bg-red-500', icon: '✗' }
     };
     
-    icon.className = icons[type] || icons['info'];
-    messageElement.textContent = message;
+    const config = colors[type] || colors.success;
     
-    const borderColors = {
-        'success': 'border-green-500',
-        'error': 'border-red-500',
-        'warning': 'border-yellow-500',
-        'info': 'border-blue-500'
-    };
+    notification.innerHTML = `
+        <div class="${config.bg} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3">
+            <span class="text-2xl">${config.icon}</span>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
     
-    notification.querySelector('div').className = `bg-white ${borderColors[type] || borderColors['info']} border-l-4 rounded-lg shadow-lg p-4 max-w-md`;
-    
-    notification.classList.remove('hidden');
-    
-    setTimeout(() => {
-        notification.classList.add('hidden');
-    }, 4000);
+    setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+    setTimeout(() => notification.style.transform = 'translateX(120%)', 3000);
 }
-

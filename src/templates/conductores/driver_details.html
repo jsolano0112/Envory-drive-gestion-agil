@@ -107,7 +107,6 @@
                     <select 
                         name="status" 
                         class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onchange="this.form.submit()"
                     >
                         <option value="Activo" {% if driver.estado == 'Activo' %}selected{% endif %}>Activo</option>
                         <option value="Inactivo" {% if driver.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
@@ -200,28 +199,31 @@
 
     <!-- Tabs -->
     <div class="bg-white rounded-lg shadow-sm mb-6">
-        <div class="border-b border-gray-200">
-            <div class="flex">
-                <a href="?search={{ search_term }}&tab=viajes" 
-                   class="px-6 py-3 font-medium transition-colors {% if active_tab == 'viajes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
-                    Todos los Viajes
-                </a>
-                <a href="?search={{ search_term }}&tab=estados" 
-                   class="px-6 py-3 font-medium transition-colors {% if active_tab == 'estados' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
-                    Cambios de Estado
-                </a>
-                <a href="?search={{ search_term }}&tab=reportes" 
-                   class="px-6 py-3 font-medium transition-colors {% if active_tab == 'reportes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600 hover:text-gray-800{% endif %}">
-                    Generador de Reportes
-                </a>
-            </div>
-        </div>
+      <div class="border-b border-gray-200">
+  <div class="flex">
+    <a href="?search={{ search_term }}&tab=viajes" 
+       class="tab-link px-6 py-3 font-medium {% if active_tab == 'viajes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600{% endif %}"
+       data-tab="viajes">
+      Todos los Viajes
+    </a>
+    <a href="?search={{ search_term }}&tab=estados" 
+       class="tab-link px-6 py-3 font-medium {% if active_tab == 'estados' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600{% endif %}"
+       data-tab="estados">
+      Cambios de Estado
+    </a>
+    <a href="?search={{ search_term }}&tab=reportes" 
+       class="tab-link px-6 py-3 font-medium {% if active_tab == 'reportes' %}text-blue-600 border-b-2 border-blue-600{% else %}text-gray-600{% endif %}"
+       data-tab="reportes">
+      Generador de Reportes
+    </a>
+  </div>
+</div>
 
-        <div class="p-6">
+      <div class="tab-content p-6">
             <!-- Tab de Viajes -->
             {% if active_tab == 'viajes' %}
-            <div class="space-y-4">
-                {% for trip in trips %}
+<div id="tab-estados" class="space-y-4">
+                    {% for trip in trips %}
                 <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
@@ -285,8 +287,8 @@
 
             <!-- Tab de Cambios de Estado -->
             {% if active_tab == 'estados' %}
-            <div class="space-y-4">
-                {% for change in status_history %}
+<div id="tab-estados" class="space-y-4">
+                    {% for change in status_history %}
                 <div class="border border-gray-200 rounded-lg p-4">
                     <div class="flex items-start gap-4">
                         <div class="flex-shrink-0">
@@ -535,5 +537,263 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+// ==========================================
+// MANEJO DE CAMBIO DE ESTADO SIN RECARGA
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.querySelector('select[name="status"]');
+    
+    if (statusSelect) {
+        statusSelect.removeAttribute('onchange');
+        statusSelect.dataset.previousValue = statusSelect.value;
+        
+        statusSelect.addEventListener('change', function(e) {
+            e.preventDefault();
+            handleStatusChange(this);
+        });
+    }
+});
+// Agregar estas funciones al script existente de driver_details.html
+
+// ==========================================
+// ACTUALIZAR HISTORIAL DE ESTADOS
+// ==========================================
+
+async function handleStatusChange(selectElement) {
+    const newStatus = selectElement.value;
+    const previousValue = selectElement.dataset.previousValue;
+    const form = selectElement.closest('form');
+    const url = form.action;
+    const csrfToken = form.querySelector('[name="csrfmiddlewaretoken"]').value;
+    
+    
+    selectElement.disabled = true;
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: `status=${encodeURIComponent(newStatus)}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            selectElement.dataset.previousValue = newStatus;
+            showNotification('Estado actualizado correctamente', 'success');
+            
+            // NUEVO: Actualizar el historial de estados si está visible
+            const activeTab = new URLSearchParams(window.location.search).get('tab');
+            if (activeTab === 'estados') {
+                await addNewStatusChangeToHistory(data.old_status, data.new_status);
+            }
+        } else {
+            throw new Error(data.message || 'Error al actualizar estado');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error: ' + error.message, 'error');
+        selectElement.value = previousValue;
+    } finally {
+        selectElement.disabled = false;
+    }
+}
+
+// Función para agregar el nuevo cambio de estado al historial
+async function addNewStatusChangeToHistory(oldStatus, newStatus) {
+   const container = document.querySelector('[data-tab="estados"]')?.closest('.bg-white')?.querySelector('.space-y-4');
+    if (!container) return;
+    
+    // Obtener el nombre del usuario actual (admin)
+    const userName = document.querySelector('[data-user-name]')?.textContent || 'Administrador';
+    
+    // Crear títulos descriptivos
+    const titles = {
+        'Pendiente-En Corrección': 'Documentos Pendientes de Corrección',
+        'En Corrección-Pendiente': 'Correcciones Enviadas',
+        'Pendiente-Activo': 'Conductor Aprobado y Activado',
+        'Pendiente-Rechazado': 'Conductor Rechazado',
+        'Activo-Inactivo': 'Conductor Desactivado',
+        'Inactivo-Activo': 'Conductor Reactivado',
+        'Activo-Suspendido': 'Conductor Suspendido',
+        'Suspendido-Activo': 'Suspensión Levantada',
+        'Activo-Bloqueado': 'Conductor Bloqueado',
+        'Bloqueado-Activo': 'Conductor Desbloqueado',
+        'Activo-En Revisión': 'Conductor en Revisión',
+        'En Revisión-Activo': 'Revisión Completada'
+    };
+    
+    const key = `${oldStatus}-${newStatus}`;
+    const title = titles[key] || `Cambio de Estado: ${oldStatus} → ${newStatus}`;
+    
+    // Crear la nueva tarjeta de cambio de estado
+    const newChange = document.createElement('div');
+    newChange.className = 'border border-gray-200 rounded-lg p-4 animate-fade-in';
+    newChange.style.animation = 'fadeIn 0.5s ease-in-out';
+    
+    // Obtener fecha y hora actual
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric' 
+    });
+    const timeStr = now.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    newChange.innerHTML = `
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0">
+                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="text-sm text-gray-600">${dateStr} - ${timeStr}</div>
+                        <div class="font-medium text-gray-800 mt-1">${title}</div>
+                    </div>
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">Reciente</span>
+                </div>
+                <div class="bg-gray-50 rounded p-3 mt-2">
+                    <div class="text-sm space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600">Estado anterior:</span>
+                            <span class="font-medium text-red-600">${oldStatus}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600">Estado nuevo:</span>
+                            <span class="font-medium text-green-600">${newStatus}</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                            <span class="text-gray-600">Motivo:</span>
+                            <span class="font-medium">Cambio manual por administrador</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600">Modificado por:</span>
+                            <span class="font-medium">${userName}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Verificar si hay un mensaje de "No hay cambios"
+    const noChangesMsg = container.querySelector('.text-center.text-gray-500');
+    if (noChangesMsg) {
+        noChangesMsg.remove();
+    }
+    
+    // Insertar al principio (más reciente primero)
+    container.insertBefore(newChange, container.firstChild);
+    
+    // Animación de resaltado temporal
+    setTimeout(() => {
+        const badge = newChange.querySelector('.bg-green-100.text-green-800');
+        if (badge) {
+            badge.style.transition = 'opacity 0.5s';
+            badge.style.opacity = '0';
+            setTimeout(() => badge.remove(), 500);
+        }
+    }, 3000);
+}
+
+// Agregar CSS para la animación
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+`;
+document.head.appendChild(style);
+
+function showNotification(message, type = 'success') {
+    let notification = document.getElementById('status-notification');
+    
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'status-notification';
+        notification.className = 'fixed top-4 right-4 z-50 transition-all duration-300';
+        notification.style.transform = 'translateX(120%)';
+        document.body.appendChild(notification);
+    }
+    
+    const colors = {
+        success: { bg: 'bg-green-500', icon: '✓' },
+        error: { bg: 'bg-red-500', icon: '✗' }
+    };
+    
+    const config = colors[type] || colors.success;
+    
+    notification.innerHTML = `
+        <div class="${config.bg} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3">
+            <span class="text-2xl">${config.icon}</span>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
+    
+    setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+    setTimeout(() => notification.style.transform = 'translateX(120%)', 3000);
+}
+document.addEventListener("DOMContentLoaded", function () {
+  const tabs = document.querySelectorAll(".tab-link");
+  const tabContent = document.querySelector(".tab-content");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", async function (e) {
+      e.preventDefault();
+
+      // Quitar clases activas
+      tabs.forEach(t => t.classList.remove("text-blue-600", "border-blue-600"));
+      tabs.forEach(t => t.classList.add("text-gray-600"));
+      
+      // Marcar tab actual
+      this.classList.remove("text-gray-600");
+      this.classList.add("text-blue-600", "border-b-2", "border-blue-600");
+
+      const tabName = this.dataset.tab;
+      const search = new URLSearchParams(window.location.search).get("search") || "";
+
+      try {
+        const response = await fetch(`?search=${encodeURIComponent(search)}&tab=${tabName}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const html = await response.text();
+
+        // Extrae solo el contenido de los tabs (para no reemplazar toda la página)
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(html, "text/html");
+        const newTabContent = newDoc.querySelector(".tab-content");
+        tabContent.innerHTML = newTabContent.innerHTML;
+
+        // Actualiza la URL sin recargar
+        history.pushState(null, "", `?search=${encodeURIComponent(search)}&tab=${tabName}`);
+      } catch (err) {
+        console.error("Error al cargar el tab:", err);
+      }
+    });
+  });
+});
 </script>
+
 {% endblock %}
