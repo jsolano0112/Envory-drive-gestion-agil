@@ -211,6 +211,7 @@ def driver_history(request):
     
     return render(request, 'conductores/driver_details.html', context)
 
+
 @admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -234,11 +235,16 @@ def update_driver_status(request, driver_id):
         driver.estado = new_status
         driver.save()
         
+        # Obtener información del usuario que hace el cambio
+        user_name = request.user.get_full_name() or request.user.username or 'Administrador'
+        
         # Registrar el cambio en el historial
+        historial_id = None
         try:
             from ..models.models import HistorialEstadoConductor
+            from django.utils import timezone
             
-            HistorialEstadoConductor.objects.create(
+            historial = HistorialEstadoConductor.objects.create(
                 conductor=driver,
                 estado_anterior=old_status,
                 estado_nuevo=new_status,
@@ -246,18 +252,53 @@ def update_driver_status(request, driver_id):
                 descripcion_motivo=request.POST.get('reason', 'Cambio manual por administrador'),
                 usuario_modificador=request.user
             )
+            historial_id = historial.id
         except (ImportError, AttributeError):
             # Si el modelo no existe aún, continuar sin registrar
             pass
         
-        return redirect(f"{request.META.get('HTTP_REFERER', '/')}?search={driver.numero_documento}")
+        # Generar título descriptivo
+        titles = {
+            ('Pendiente', 'En Corrección'): 'Documentos Pendientes de Corrección',
+            ('En Corrección', 'Pendiente'): 'Correcciones Enviadas',
+            ('Pendiente', 'Activo'): 'Conductor Aprobado y Activado',
+            ('Pendiente', 'Rechazado'): 'Conductor Rechazado',
+            ('Activo', 'Inactivo'): 'Conductor Desactivado',
+            ('Inactivo', 'Activo'): 'Conductor Reactivado',
+            ('Activo', 'Suspendido'): 'Conductor Suspendido',
+            ('Suspendido', 'Activo'): 'Suspensión Levantada',
+            ('Activo', 'Bloqueado'): 'Conductor Bloqueado',
+            ('Bloqueado', 'Activo'): 'Conductor Desbloqueado',
+            ('Activo', 'En Revisión'): 'Conductor en Revisión',
+            ('En Revisión', 'Activo'): 'Revisión Completada',
+        }
+        
+        title = titles.get(
+            (old_status, new_status),
+            f'Cambio de Estado: {old_status} → {new_status}'
+        )
+        
+        # Retornar JSON con toda la información necesaria
+        return JsonResponse({
+            'success': True,
+            'message': 'Estado actualizado correctamente',
+            'data': {
+                'new_status': new_status,
+                'old_status': old_status,
+                'title': title,
+                'modified_by': user_name,
+                'historial_id': historial_id,
+                'timestamp': timezone.now().isoformat() if 'timezone' in locals() else None
+            }
+        })
     
     except Exception as e:
         return JsonResponse({
             'success': False,
             'message': f'Error al actualizar estado: {str(e)}'
         }, status=500)
-
+        
+        
 @admin_required
 @csrf_exempt
 @require_http_methods(["POST"])
