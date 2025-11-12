@@ -5,7 +5,7 @@
 
 {% block page_title %}Detalle de Conductor{% endblock %}
 
-{% block page_subtitle %}Gestión detallada de conductores{% endblock %}
+{% block page_subtitle %}{% endblock %}
 
 {% block content %}
 <style>
@@ -588,7 +588,7 @@ async function handleStatusChange(selectElement) {
             // NUEVO: Actualizar el historial de estados si está visible
             const activeTab = new URLSearchParams(window.location.search).get('tab');
             if (activeTab === 'estados') {
-                await addNewStatusChangeToHistory(data.old_status, data.new_status);
+                await addNewStatusChangeToHistory(previousValue, newStatus);
             }
         } else {
             throw new Error(data.message || 'Error al actualizar estado');
